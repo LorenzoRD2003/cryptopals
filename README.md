@@ -4,27 +4,27 @@ All the work in this repository is done by me while studying cryptography and le
 Some of the solutions to the challenges are tests in the files. Still in progress. I plan to complete it during my free time.
 
 ## Progress 🚀🚀🚀
-<style>
-  .progress-container {
+<div>
+  Progress:
+  <div style="
     width: 100%;
     background-color: #e0e0e0;
     border-radius: 5px;
     overflow: hidden;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  }
-
-  .progress-bar {
-    height: 30px;
-    width: 33%;
-    background-color: #555555;
-    text-align: center;
-    line-height: 30px;
-    color: white;
-    transition: width 0.4s ease;
-  }
-</style>
-<div class="progress-container">
-  <div class="progress-bar">33%</div>
+  ">
+    <div style="
+      height: 30px;
+      width: 32%;
+      background-color: #555555;
+      text-align: center;
+      line-height: 30px;
+      color: white;
+      transition: width 0.4s ease;
+    ">
+      32%
+    </div>
+  </div>
 </div>
 
 ### Set 1: Basics ✅

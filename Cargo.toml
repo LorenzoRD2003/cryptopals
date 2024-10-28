@@ -1,0 +1,12 @@
+[package]
+name = "cryptopals"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+base64 = "0.13"
+hex = "0.4"
+rand = "0.8"
+
+[dev-dependencies]
+assert_matches = "1.5"

@@ -10,9 +10,12 @@ impl MT19937TwisterRNG {
     let mut states = [0u32; N];
     states[0] = seed;
     for i in 1..N {
-      states[i] = F * states[i - 1] ^ (states[i - 1] >> (W - 2)) + (i as u32);
+      states[i] = (states[i - 1] ^ (states[i - 1] >> (W - 2)))
+        .wrapping_mul(F)
+        .wrapping_add(i as u32);
     }
-    Self { states, index: 0 }
+    dbg!(states[..3].to_vec());
+    Self { states, index: 624 }
   }
 
   pub fn extract_number(&mut self) -> u32 {
@@ -20,18 +23,23 @@ impl MT19937TwisterRNG {
     if self.index == N {
       self.twist();
     }
+    dbg!(self.index);
     let mut y = self.states[self.index];
-    y ^= (y >> U) ^ (y << (W - U)); // Shift right and left
-    y ^= (y << S) & Self::mask(S);
-    y ^= (y << T) & Self::mask(T);
-    y ^= y >> L;
     self.index += 1;
-    return y;
+    dbg!(y);
+    y ^= y >> U;
+    dbg!(y);
+    y ^= (y << S) & B;
+    dbg!(y);
+    y ^= (y << T) & C;
+    dbg!(y);
+    y ^= y >> L;
+    y
   }
 
   fn twist(&mut self) {
     for i in 0..N {
-      let x = (self.states[i] & 0x80000000) + (self.states[(i + 1) % N] & 0x7FFFFFFF);
+      let x = (self.states[i] & UMASK) | (self.states[(i + 1) % N] & LMASK);
       let mut x_a = x >> 1;
       if x & 1 != 0 {
         x_a ^= A;
@@ -40,9 +48,20 @@ impl MT19937TwisterRNG {
     }
     self.index = 0;
   }
+}
 
-  fn mask(k: u32) -> u32 {
-    assert!(k < 64);
-    (1 << k) - 1
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_extract_numbers() {
+    let seed: u32 = 5489;
+    let mut rng = MT19937TwisterRNG::initialize(seed);
+    assert_eq!(rng.extract_number(), 3499211612);
+    assert_eq!(rng.extract_number(), 581869302);
+    assert_eq!(rng.extract_number(), 3890346734);
+    assert_eq!(rng.extract_number(), 3586334585);
+    assert_eq!(rng.extract_number(), 545404204);
   }
 }

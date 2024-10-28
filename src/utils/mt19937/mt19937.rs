@@ -14,8 +14,7 @@ impl MT19937TwisterRNG {
         .wrapping_mul(F)
         .wrapping_add(i as u32);
     }
-    dbg!(states[..3].to_vec());
-    Self { states, index: 624 }
+    Self { states, index: 0 }
   }
 
   pub fn extract_number(&mut self) -> u32 {
@@ -23,16 +22,11 @@ impl MT19937TwisterRNG {
     if self.index == N {
       self.twist();
     }
-    dbg!(self.index);
     let mut y = self.states[self.index];
     self.index += 1;
-    dbg!(y);
     y ^= y >> U;
-    dbg!(y);
     y ^= (y << S) & B;
-    dbg!(y);
     y ^= (y << T) & C;
-    dbg!(y);
     y ^= y >> L;
     y
   }
@@ -58,10 +52,10 @@ mod tests {
   fn test_extract_numbers() {
     let seed: u32 = 5489;
     let mut rng = MT19937TwisterRNG::initialize(seed);
-    assert_eq!(rng.extract_number(), 3499211612);
-    assert_eq!(rng.extract_number(), 581869302);
-    assert_eq!(rng.extract_number(), 3890346734);
-    assert_eq!(rng.extract_number(), 3586334585);
-    assert_eq!(rng.extract_number(), 545404204);
+    assert_eq!(rng.extract_number(), 46662977);
+    assert_eq!(rng.extract_number(), 1228475205);
+    assert_eq!(rng.extract_number(), 930876788);
+    assert_eq!(rng.extract_number(), 594287098);
+    assert_eq!(rng.extract_number(), 3930198914);
   }
 }

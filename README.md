@@ -5,7 +5,6 @@ Some of the solutions to the challenges are tests in the files. Still in progres
 
 ## Progress 🚀🚀🚀
 <div>
-  Progress:
   <div style="
     width: 100%;
     background-color: #e0e0e0;
@@ -53,7 +52,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   - Break fixed-nonce CTR mode using substitutions ✅
   - Break fixed-nonce CTR statistically ✅
   - Implement the MT19937 Mersenne Twister RNG ✅
-  - Crack an MT19937 seed ❌
+  - Crack an MT19937 seed ✅
   - Clone an MT19937 RNG from its output ❌
   - Create the MT19937 stream cipher and break it ❌
 

@@ -11,7 +11,7 @@ use rand::{thread_rng, Rng};
 
 fn main() -> Result<(), AESError> {
   let random_key: [u8; AES128_KEY_SIZE] = thread_rng().gen();
-  const PATH: &str = "./src/data/3-20.txt";
+  const PATH: &str = "src/data/3-20.txt";
   let file = File::open(PATH).unwrap();
   let reader = BufReader::new(file);
 

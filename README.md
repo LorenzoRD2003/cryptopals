@@ -55,7 +55,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   - Create the MT19937 stream cipher and break it ✅
 
 ### Set 4: Stream Crypto and Randomness 🚩
-  - Break "random access read/write" AES CTR ❌
+  - Break "random access read/write" AES CTR ✅
   - CTR bitflipping ❌
   - Recover the key from CBC with IV=Key ❌
   - Implement a SHA-1 keyed MAC ❌

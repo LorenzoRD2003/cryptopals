@@ -17,18 +17,18 @@ impl MT19937TwisterRNG {
     Self { states, index: 0 }
   }
 
+  pub fn from_states(states: [u32; N]) -> Self {
+    Self { states, index: 0 }
+  }
+
   pub fn extract_number(&mut self) -> u32 {
     // Need to generate N new numbers
     if self.index == N {
       self.twist();
     }
-    let mut y = self.states[self.index];
+    let y = self.states[self.index];
     self.index += 1;
-    y ^= y >> U;
-    y ^= (y << S) & B;
-    y ^= (y << T) & C;
-    y ^= y >> L;
-    y
+    Self::temper(y)
   }
 
   fn twist(&mut self) {
@@ -41,6 +41,15 @@ impl MT19937TwisterRNG {
       self.states[i] = self.states[(i + M) % N] ^ x_a;
     }
     self.index = 0;
+  }
+
+  fn temper(y: u32) -> u32 {
+    let mut y0 = y; 
+    y0 ^= y0 >> U;
+    y0 ^= (y0 << S) & B;
+    y0 ^= (y0 << T) & C;
+    y0 ^= y0 >> L;
+    y0
   }
 }
 

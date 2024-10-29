@@ -8,20 +8,18 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   <div style="
     width: 100%;
     background-color: #e0e0e0;
-    border-radius: 5px;
+    border-radius: 10px;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   ">
     <div style="
       height: 30px;
-      width: 32%;
+      width: 35%;
       background-color: #555555;
       text-align: center;
       line-height: 30px;
       color: white;
-      transition: width 0.4s ease;
     ">
-      32%
+      35%
     </div>
   </div>
 </div>
@@ -53,7 +51,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   - Break fixed-nonce CTR statistically ✅
   - Implement the MT19937 Mersenne Twister RNG ✅
   - Crack an MT19937 seed ✅
-  - Clone an MT19937 RNG from its output ❌
+  - Clone an MT19937 RNG from its output ✅
   - Create the MT19937 stream cipher and break it ❌
 
 ### Set 4: Stream Crypto and Randomness 🚩

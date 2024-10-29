@@ -16,8 +16,7 @@ fn get_pseudorandom_number() -> Result<u32, SystemTimeError> {
 
 fn main() -> Result<(), SystemTimeError> {
   let n = get_pseudorandom_number()?;
-  // It is unfeasible to find a solution mathematically
-  // So we will test it with the different possible times
+  // Test it with the different possible times
   let time = SystemTime::now()
     .duration_since(UNIX_EPOCH)?
     .as_secs();

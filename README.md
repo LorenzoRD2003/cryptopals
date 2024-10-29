@@ -13,13 +13,13 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   ">
     <div style="
       height: 30px;
-      width: 35%;
+      width: 41%;
       background-color: #555555;
       text-align: center;
       line-height: 30px;
       color: white;
     ">
-      35%
+      41%
     </div>
   </div>
 </div>
@@ -57,7 +57,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
 ### Set 4: Stream Crypto and Randomness 🚩
   - Break "random access read/write" AES CTR ✅
   - CTR bitflipping ✅
-  - Recover the key from CBC with IV=Key ❌
+  - Recover the key from CBC with IV=Key ✅
   - Implement a SHA-1 keyed MAC ❌
   - Break a SHA-1 keyed MAC using length extension ❌
   - Break an MD4 keyed MAC using length extension ❌

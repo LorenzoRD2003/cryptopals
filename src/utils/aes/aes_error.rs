@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::utils::{aes::constants::*, conversion::conversion::ConversionError};
+use crate::utils::{aes::constants::*, conversion::{conversion::ConversionError, hex_string::HexString}};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AESError {
@@ -8,6 +8,7 @@ pub enum AESError {
   InvalidBlockSize(usize),
   PaddingError,
   ConversionError(ConversionError),
+  AsciiError(Vec<u8>),
   UnexpectedError,
 }
 
@@ -44,6 +45,10 @@ impl fmt::Display for AESError {
       Self::PaddingError => {
         write!(f, "An error occurred with the padding.")
       }
+      Self::AsciiError(plaintext) => {
+        let hex = HexString::try_from(plaintext.clone()).unwrap();
+        write!(f, "ASCII error for obtained plaintext {hex}")
+      },
       Self::UnexpectedError => {
         write!(f, "An unexpected error occurred during AES execution.")
       }

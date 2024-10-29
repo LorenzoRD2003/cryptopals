@@ -42,14 +42,14 @@ fn main() -> Result<(), AESError> {
   let random_key: [u8; 16] = thread_rng().gen();
 
   /*
-   ANALISIS TEORICO. El pre-texto ocupa exactamente dos bloques b0, b1. ^ es xor.
-   Notacion:
-     - E(k, .) para encriptar en modo ECB, E'(k, .) para el modo CBC. (es por bloque, se usa la definicion recursiva de E')
-     - D(k, .) para decriptar en modo ECB, D'(k, .) para el modo CBC.
-   Podemos encriptar todo bloque que no tenga = o ;
-   Y queremos obtener un bloque b2 = "abcde;admin=true" mediante modificacion del encriptado.
-   i.e. queremos obtener y2 tal que D'(k, y2) = b2
-   Tenemos la ventaja de saber y0, y1 porque son FIJOS al ser fijos b0, b1 → y0y1 = E'(k, b0b1)
+  ANALISIS TEORICO. El pre-texto ocupa exactamente dos bloques b0, b1. ^ es xor.
+  Notacion:
+    - E(k, .) para encriptar en modo ECB, E'(k, .) para el modo CBC. (es por bloque, se usa la definicion recursiva de E')
+    - D(k, .) para decriptar en modo ECB, D'(k, .) para el modo CBC.
+  Podemos encriptar todo bloque que no tenga = o ;
+  Y queremos obtener un bloque b2 = "abcde;admin=true" mediante modificacion del encriptado.
+  i.e. queremos obtener y2 tal que D'(k, y2) = b2
+  Tenemos la ventaja de saber y0, y1 porque son FIJOS al ser fijos b0, b1 → y0y1 = E'(k, b0b1)
 
   Consideramos b2', c tales que b2' = b2 ^ c, pero donde b2' es valido (y c tiene pocos bits 1)
   En particular usamos lo siguiente para definir el c que queremos

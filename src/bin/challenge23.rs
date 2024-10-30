@@ -1,4 +1,4 @@
-use cryptopals::utils::mt19937::{constants::*, mt19937::MT19937TwisterRNG};
+use cryptopals::utils::rng::{constants::*, mt19937::MT19937TwisterRNG};
 use rand::{thread_rng, Rng};
 
 fn untemper(y: u32) -> u32 {

@@ -1,4 +1,4 @@
-use cryptopals::utils::mt19937::mt19937::MT19937TwisterRNG;
+use cryptopals::utils::rng::mt19937::MT19937TwisterRNG;
 use rand::{thread_rng, Rng};
 use std::{thread::sleep, time::{Duration, SystemTime, SystemTimeError, UNIX_EPOCH}};
 

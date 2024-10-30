@@ -1,5 +1,5 @@
 # Cryptopals Challenges Solutions 😄
-All the work in this repository is done by me while studying cryptography and learning better practices in Rust.
+All the work in this repository is done by me while studying cryptography and learning better practices in Rust. I also include additional things, as my implementations for AES, HexStrings and Hashes.
 
 Some of the solutions to the challenges are tests in the files. Still in progress. I plan to complete it during my free time.
 
@@ -58,7 +58,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   - Break "random access read/write" AES CTR ✅
   - CTR bitflipping ✅
   - Recover the key from CBC with IV=Key ✅
-  - Implement a SHA-1 keyed MAC ❌
+  - Implement a SHA-1 keyed MAC ✅
   - Break a SHA-1 keyed MAC using length extension ❌
   - Break an MD4 keyed MAC using length extension ❌
   - Implement and break HMAC-SHA1 with an artificial timing leak ❌

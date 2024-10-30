@@ -2,7 +2,7 @@ use std::time::{Duration, SystemTimeError};
 use std::thread::sleep;
 use std::time::{SystemTime, UNIX_EPOCH};
 use rand::{thread_rng, Rng};
-use cryptopals::utils::mt19937::mt19937::MT19937TwisterRNG;
+use cryptopals::utils::rng::mt19937::MT19937TwisterRNG;
 
 fn get_pseudorandom_number() -> Result<u32, SystemTimeError> {
   sleep(Duration::from_secs(thread_rng().gen_range(10..=40)));

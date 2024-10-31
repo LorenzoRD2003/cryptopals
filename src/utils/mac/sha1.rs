@@ -1,13 +1,14 @@
-type SHA1Digest = [u8; 20];
 pub const SHA1_BLOCK_SIZE: usize = 64;
+pub type Sha1Digest = [u8; 20];
+pub type Sha1Block = [u8; SHA1_BLOCK_SIZE];
 
-pub struct SHA1 {
+pub struct Sha1 {
   h: [u32; 5],
   buf: Vec<u8>,
   data_len: u64
 }
 
-impl SHA1 {
+impl Sha1 {
   pub fn new() -> Self {
     Self {
       h: [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0],
@@ -20,13 +21,13 @@ impl SHA1 {
     self.buf.extend_from_slice(data.as_ref());
     self.data_len += data.as_ref().len() as u64;
     while self.buf.len() >= SHA1_BLOCK_SIZE {
-      let block: [u8; SHA1_BLOCK_SIZE] = self.buf[..SHA1_BLOCK_SIZE].try_into().unwrap();
+      let block: Sha1Block = self.buf[..SHA1_BLOCK_SIZE].try_into().unwrap();
       self.buf.drain(..SHA1_BLOCK_SIZE);
       self.process_block(&block);
     }
   }
 
-  pub fn finalize(&mut self) -> SHA1Digest {
+  pub fn finalize(&mut self) -> Sha1Digest {
     let mut padded_buf = self.buf.clone();
     let len = self.data_len * 8;
     padded_buf.push(0x80);
@@ -39,14 +40,26 @@ impl SHA1 {
       self.process_block(block.try_into().unwrap());
     }
 
-    let mut result: SHA1Digest = [0u8; 20];
+    let mut result: Sha1Digest = [0u8; 20];
     for (i, &h) in self.h.iter().enumerate() {
       result[4 * i..4 * (i + 1)].copy_from_slice(&h.to_be_bytes());
     }
     result
   }
 
-  fn process_block(&mut self, block: &[u8; SHA1_BLOCK_SIZE]) {
+  pub fn reset(&mut self) {
+    self.h = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
+    self.buf = Vec::new();
+    self.data_len = 0;
+  }
+
+  pub fn hash<S: AsRef<[u8]>>(data: &S) -> Sha1Digest {
+    let mut hash_fn = Self::new();
+    hash_fn.update(data);
+    hash_fn.finalize()
+  }
+
+  fn process_block(&mut self, block: &Sha1Block) {
     let mut words = [0u32; 80];
 
     for i in 0..16 {
@@ -113,25 +126,25 @@ impl SHA1 {
   }
 }
 
-pub struct SHA1MAC {
+pub struct Sha1Mac {
   key: Vec<u8>,
 }
 
-impl SHA1MAC {
+impl Sha1Mac {
   pub fn new<S: AsRef<[u8]>>(key: &S) -> Self {
     Self {
       key: key.as_ref().to_vec(),
     }
   }
 
-  pub fn authenticate<S: AsRef<[u8]>>(&self, message: &S) -> SHA1Digest {
-    let mut hash_fn = SHA1::new();
+  pub fn authenticate<S: AsRef<[u8]>>(&self, message: &S) -> Sha1Digest {
+    let mut hash_fn = Sha1::new();
     hash_fn.update(&self.key);
     hash_fn.update(message);
     hash_fn.finalize()
   }
 
-  pub fn verify<S: AsRef<[u8]>>(&self, message: &S, expected: SHA1Digest) -> bool {
+  pub fn verify<S: AsRef<[u8]>>(&self, message: &S, expected: Sha1Digest) -> bool {
     self.authenticate(message) == expected
   }
 }
@@ -141,8 +154,8 @@ mod tests {
   use super::*;
   use crate::utils::conversion::hex_string::HexString;
 
-  fn hash<S: AsRef<[u8]>>(data: &S) -> SHA1Digest {
-    let mut hash_fn = SHA1::new();
+  fn hash<S: AsRef<[u8]>>(data: &S) -> Sha1Digest {
+    let mut hash_fn = Sha1::new();
     hash_fn.update(data);
     hash_fn.finalize()
   }
@@ -173,7 +186,7 @@ mod tests {
 
   #[test]
   fn test_multiple_data() {
-    let mut hash_fn = SHA1::new();
+    let mut hash_fn = Sha1::new();
     hash_fn.update(b"ab");
     hash_fn.update(b"c");
     let digest = hash_fn.finalize();
@@ -200,7 +213,7 @@ mod tests {
   #[test]
   fn test_sha1_mac() {
     let secret_key = b"YELLOW SUBMARINE";
-    let mac = SHA1MAC::new(secret_key);
+    let mac = Sha1Mac::new(secret_key);
     let digest = mac.authenticate(b"HOLA");
     assert_eq!(
       HexString::try_from(digest.to_vec()).unwrap(),
@@ -211,7 +224,7 @@ mod tests {
   #[test]
   fn test_sha1_mac_verify() {
     let secret_key = b"YELLOW SUBMARINE";
-    let mac = SHA1MAC::new(secret_key);
+    let mac = Sha1Mac::new(secret_key);
     let digest = mac.authenticate(b"HOLA");
     assert!(mac.verify(b"HOLA", digest));
     assert!(!mac.verify(b"", digest));

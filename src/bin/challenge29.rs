@@ -1,4 +1,4 @@
-use cryptopals::utils::mac::sha1::{SHA1, SHA1MAC, SHA1_BLOCK_SIZE};
+use cryptopals::utils::mac::sha1::{Sha1, Sha1Mac, SHA1_BLOCK_SIZE};
 use rand::{thread_rng, Rng};
 
 fn md_padding(key_len: usize, v: &mut Vec<u8>) {
@@ -21,7 +21,7 @@ fn main() {
 
     // Obtain a hash of the message with the corresponding padding
     md_padding(key_len, &mut message);
-    let mac = SHA1MAC::new(&random_key);
+    let mac = Sha1Mac::new(&random_key);
     let padding_digest = mac.authenticate(&message);
 
     // We have to add this block because of "" string in the last block
@@ -39,7 +39,7 @@ fn main() {
       u32::from_be_bytes(padding_digest[16..20].try_into().unwrap()),
     ];
     let data_len = key_len + message.len();
-    let mut fixed_state_sha1 = SHA1::new_with_fixed_state(h, data_len as u64);
+    let mut fixed_state_sha1 = Sha1::new_with_fixed_state(h, data_len as u64);
 
     // Add the data you want and process it with the fixed-state SHA1 fn
     let sneaked_data = b";admin=true";

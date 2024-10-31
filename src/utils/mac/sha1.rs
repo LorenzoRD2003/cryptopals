@@ -1,5 +1,7 @@
+use crate::utils::conversion::hex_string::HexString;
+
 type SHA1Digest = [u8; 20];
-const SHA1_BLOCK_SIZE: usize = 64;
+pub const SHA1_BLOCK_SIZE: usize = 64;
 
 pub struct SHA1 {
   h: [u32; 5],
@@ -22,7 +24,6 @@ impl SHA1 {
     while self.buf.len() >= SHA1_BLOCK_SIZE {
       let block: [u8; SHA1_BLOCK_SIZE] = self.buf[..SHA1_BLOCK_SIZE].try_into().unwrap();
       self.buf.drain(..SHA1_BLOCK_SIZE);
-      dbg!(&block);
       self.process_block(&block);
     }
   }
@@ -34,11 +35,9 @@ impl SHA1 {
     while padded_buf.len() % SHA1_BLOCK_SIZE != 56 {
       padded_buf.push(0);
     }
-    dbg!(&len.to_be_bytes());
     padded_buf.extend_from_slice(&len.to_be_bytes());
 
     for block in padded_buf.chunks(SHA1_BLOCK_SIZE) {
-      dbg!(block);
       self.process_block(block.try_into().unwrap());
     }
 
@@ -106,6 +105,14 @@ impl SHA1 {
   fn rotate_left(value: u32, amount: u32) -> u32 {
     (value << amount) | (value >> (32 - amount))
   }
+
+  pub fn new_with_fixed_state(h: [u32; 5], data_len: u64) -> Self { // allow this for Challenge 29
+    Self {
+      h,
+      buf: Vec::new(),
+      data_len
+    }
+  }
 }
 
 pub struct SHA1MAC {
@@ -124,6 +131,10 @@ impl SHA1MAC {
     hash_fn.update(&self.key);
     hash_fn.update(message);
     hash_fn.finalize()
+  }
+
+  pub fn verify<S: AsRef<[u8]>>(&self, message: &S, expected: SHA1Digest) -> bool {
+    self.authenticate(message) == expected
   }
 }
 
@@ -175,11 +186,16 @@ mod tests {
   }
 
   #[test]
-  fn test_sha1_multiple_block() {
-    let digest = hash(b"AGUANTE EL CLUB ATLETICO Y RECREATIVO GENERAL SAN MARTIN DE LAS ESCOBAS");
+  fn test_sha1_multiple_blocks() {
+    let digest1 = hash(b"AGUANTE EL CLUB ATLETICO Y RECREATIVO GENERAL SAN MARTIN DE LAS ESCOBAS");
     assert_eq!(
-      HexString::try_from(digest.to_vec()).unwrap(),
+      HexString::try_from(digest1.to_vec()).unwrap(),
       HexString::try_from("FB5C2CD7783BE22D7EBBC63E69BDBF2018E72078").unwrap()
+    );
+    let digest2 = hash(b"AGUANTE EL CLUB ATLETICO Y RECREATIVO GENERAL SAN MARTIN DE LAS ");
+    assert_eq!(
+      HexString::try_from(digest2.to_vec()).unwrap(),
+      HexString::try_from("3D696BBE476F4AE7CCA8955C3E1C6F578584FCD9").unwrap()
     );
   }
 
@@ -192,5 +208,14 @@ mod tests {
       HexString::try_from(digest.to_vec()).unwrap(),
       HexString::try_from("29BEBA5E4112AF916AA62B73505AB76AE61A94F0").unwrap()
     )
+  }
+
+  #[test]
+  fn test_sha1_mac_verify() {
+    let secret_key = b"YELLOW SUBMARINE";
+    let mac = SHA1MAC::new(secret_key);
+    let digest = mac.authenticate(b"HOLA");
+    assert!(mac.verify(b"HOLA", digest));
+    assert!(!mac.verify(b"", digest));
   }
 }

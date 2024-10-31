@@ -1,5 +1,3 @@
-use crate::utils::conversion::hex_string::HexString;
-
 type SHA1Digest = [u8; 20];
 pub const SHA1_BLOCK_SIZE: usize = 64;
 

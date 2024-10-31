@@ -7,6 +7,7 @@ edition = "2021"
 base64 = "0.13"
 hex = "0.4"
 rand = "0.8"
+regex = "1"
 
 [dev-dependencies]
 assert_matches = "1.5"

@@ -65,7 +65,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   - Break HMAC-SHA1 with a slightly less artificial timing leak ✅  (obtained ~20 ms in the non-regex version)
 
 ### Set 5: Diffie-Hellmann and Friends 🚩
-  - Implement Diffie-Hellman ❌
+  - Implement Diffie-Hellman ✅
   - Implement a MITM key-fixing attack on Diffie-Hellman with parameter injection ❌
   - Implement DH with negotiated groups, and break with malicious "g" parameters ❌
   - Implement Secure Remote Password (SRP) ❌

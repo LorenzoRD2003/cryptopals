@@ -5,7 +5,9 @@ use cryptopals::utils::{
 use rand::{thread_rng, Rng};
 use regex::Regex;
 use std::{
-  collections::HashMap, fmt, thread::sleep, time::{Duration, SystemTime, SystemTimeError}
+  fmt,
+  thread::sleep,
+  time::{Duration, SystemTime, SystemTimeError},
 };
 
 #[derive(Debug, Clone, PartialEq)]
@@ -41,7 +43,6 @@ struct RequestParams {
 
 struct Server {
   hash: Sha1HMac,
-  buffer: HashMap<Vec<u8>, Sha1Digest>
 }
 
 impl Server {
@@ -50,7 +51,6 @@ impl Server {
     let random_key: Vec<u8> = (0..random_len).map(|_| thread_rng().gen()).collect();
     Self {
       hash: Sha1HMac::new(&random_key),
-      buffer: HashMap::new()
     }
   }
 

@@ -1,5 +1,5 @@
 use num_bigint::{BigUint, RandBigInt};
-use num_traits::One;
+use num_traits::{One, Zero};
 use rand::thread_rng;
 use sha2::{Digest, Sha256};
 
@@ -133,6 +133,25 @@ impl SrpSimulator {
     let hmac = Sha1HMac::new(&server_key);
     hmac.verify(&self.server.salt.to_bytes_be(), client_digest)
   }
+
+  pub fn bypass_with_zero_pk(&self) -> bool {
+    // C sends (email, 0) to S
+    let u = self.server.compute_u(&BigUint::zero()); // I can put whichever multiple of N 
+
+    // S = (A * v**u) ** b % N = 0 → K = SHA256(0)
+    let key = self.server.compute_key(&self.n, &BigUint::zero(), &u);
+    let attacker_key = {
+      let mut hasher = Sha256::new();
+      hasher.update([0]);
+      hasher.finalize().to_vec()
+    };
+    assert_eq!(key, attacker_key);
+
+    let attacker_hmac = Sha1HMac::new(&attacker_key);
+    let attacker_digest: Sha1Digest = attacker_hmac.authenticate(&self.server.salt.to_bytes_be());
+    let hmac = Sha1HMac::new(&key);
+    hmac.verify(&self.server.salt.to_bytes_be(), attacker_digest)
+  }
 }
 
 #[cfg(test)]
@@ -145,5 +164,13 @@ mod tests {
     let password = String::from("abcdefghijklm");
     let srp = SrpSimulator::for_email_password(&email, &password);
     assert!(srp.validate());
+  }
+
+  #[test]
+  fn test_bypass() {
+    let email = String::from("lorenzo@gmail.com");
+    let password = String::from("abcdefghijklm");
+    let srp = SrpSimulator::for_email_password(&email, &password);
+    assert!(srp.bypass_with_zero_pk());
   }
 }

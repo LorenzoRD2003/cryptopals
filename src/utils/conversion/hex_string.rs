@@ -23,7 +23,7 @@ impl TryFrom<String> for HexString {
     } else {
       str
     };
-    let hex_str = Self { string: final_str.to_ascii_lowercase() };
+    let hex_str = Self { string: final_str.to_ascii_lowercase().chars().filter(|&c| !c.is_whitespace()).collect() };
     hex_str.validate()?;
     Ok(hex_str)
   }

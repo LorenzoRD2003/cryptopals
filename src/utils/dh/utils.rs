@@ -1,5 +1,6 @@
 use num_bigint::BigUint;
 use num_traits::{FromBytes, One, Zero};
+use sha2::{Digest, Sha256};
 
 use crate::utils::conversion::hex_string::HexString;
 
@@ -18,7 +19,8 @@ pub fn mod_exp(g: &BigUint, exponent: &BigUint, p: &BigUint) -> BigUint {
 }
 
 pub fn get_dh_p() -> BigUint {
-  let hex = HexString::try_from("
+  let hex = HexString::try_from(
+    "
     ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024
     e088a67cc74020bbea63b139b22514a08798e3404ddef9519b3cd
     3a431b302b0a6df25f14374fe1356d6d51c245e485b576625e7ec
@@ -31,4 +33,18 @@ pub fn get_dh_p() -> BigUint {
   )
   .unwrap();
   BigUint::from_be_bytes(hex.as_vector_of_bytes().unwrap().as_ref())
+}
+
+pub fn concat_biguints(a: &BigUint, b: &BigUint) -> BigUint {
+  let mut concatenated_bytes = a.to_bytes_be().clone();
+  concatenated_bytes.extend_from_slice(&b.to_bytes_be());
+  BigUint::from_bytes_le(&concatenated_bytes)
+}
+
+pub fn salt_then_hash_biguint(salt: &BigUint, password: &String) -> BigUint {
+  let mut hasher = Sha256::new();
+  hasher.update(salt.to_bytes_be());
+  hasher.update(password);
+  let xh = hasher.finalize();
+  BigUint::from_bytes_be(&xh)
 }

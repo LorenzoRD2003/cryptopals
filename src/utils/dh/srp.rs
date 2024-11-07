@@ -38,7 +38,7 @@ impl ServerAbstraction {
     let mut hasher = Sha256::new();
     hasher.update(s.to_bytes_be());
     hasher.finalize().to_vec()
-  }
+  }  
 }
 
 struct ClientAbstraction {
@@ -135,8 +135,9 @@ impl SrpSimulator {
   }
 
   pub fn bypass_with_zero_pk(&self) -> bool {
+    // Note that in this whole function, C does not use the password! So it does not need to know it
     // C sends (email, 0) to S
-    let u = self.server.compute_u(&BigUint::zero()); // I can put whichever multiple of N 
+    let u = self.server.compute_u(&BigUint::zero()); // I can put whichever multiple of N
 
     // S = (A * v**u) ** b % N = 0 → K = SHA256(0)
     let key = self.server.compute_key(&self.n, &BigUint::zero(), &u);
@@ -152,6 +153,7 @@ impl SrpSimulator {
     let hmac = Sha1HMac::new(&key);
     hmac.verify(&self.server.salt.to_bytes_be(), attacker_digest)
   }
+
 }
 
 #[cfg(test)]

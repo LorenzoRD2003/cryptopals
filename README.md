@@ -3,7 +3,7 @@ All the work in this repository is done by me while studying cryptography and le
 
 Some of the solutions to the challenges are tests in the files. Still in progress. I plan to complete it during my free time.
 
-## Progress: 52% 🚀🚀🚀
+## Progress: 53% 🚀🚀🚀
 
 ### Set 1: Basics ✅
   - Convert hex to base64 ✅
@@ -48,7 +48,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
 ### Set 5: Diffie-Hellmann and Friends 🚩
   - Implement Diffie-Hellman ✅
   - Implement a MITM key-fixing attack on Diffie-Hellman with parameter injection ✅
-  - Implement DH with negotiated groups, and break with malicious "g" parameters ❌
+  - Implement DH with negotiated groups, and break with malicious "g" parameters ✅
   - Implement Secure Remote Password (SRP) ❌
   - Break SRP with a zero key ❌
   - Offline dictionary attack on simplified SRP ❌

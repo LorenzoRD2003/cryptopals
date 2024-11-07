@@ -16,7 +16,7 @@ fn dh_protocol() -> Result<(), AESError> {
   let (bob, b_session) = DiffieHellmanParty::from_other_party_params(&p, &g, &alice.pk);
 
   // Bob sends B to Alice
-  let a_session = alice.get_session_key(&bob.pk);
+  let a_session = alice.create_session_with(&bob.pk);
   assert_eq!(a_session, b_session);
 
   // Alice sends AES-CBC(SHA1(s)[0:16], iv=random(16), msg) + iv to Bob
@@ -47,7 +47,7 @@ fn mitm_attack_simulation() -> Result<(), AESError> {
   let (_bob, b_session) = DiffieHellmanParty::from_other_party_params(&p, &g, &p);
 
   // M modifies what Bob sent to Alice. Replacing B by p
-  let a_session = alice.get_session_key(&p);
+  let a_session = alice.create_session_with(&p);
   assert_eq!(a_session, b_session); // The session is still valid
 
   // Now M should be able to decrypt the messages

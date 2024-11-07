@@ -28,7 +28,7 @@ impl DiffieHellmanParty {
     }
   }
 
-  pub fn get_session_key(&self, other_pk: &BigUint) -> DiffieHellmanSession {
+  pub fn create_session_with(&self, other_pk: &BigUint) -> DiffieHellmanSession {
     let s = mod_exp(&other_pk, &self.sk, &self.p);
     let mut hasher = Sha256::new();
     hasher.update(s.to_bytes_be());
@@ -41,7 +41,7 @@ impl DiffieHellmanParty {
 
   pub fn from_other_party_params(p: &BigUint, g: &BigUint, other_pk: &BigUint) -> (DiffieHellmanParty, DiffieHellmanSession) {
     let party = Self::new(&p, &g);
-    let session = party.get_session_key(&other_pk);
+    let session = party.create_session_with(&other_pk);
     (party, session)
   }
 }
@@ -67,8 +67,8 @@ mod tests {
     let (p, g) = (BigUint::from(37u32), BigUint::from(5u32));
     let alice = DiffieHellmanParty::new(&p, &g);
     let bob = DiffieHellmanParty::new(&p, &g);
-    let session_a = alice.get_session_key(&bob.pk);
-    let session_b = bob.get_session_key(&alice.pk);
+    let session_a = alice.create_session_with(&bob.pk);
+    let session_b = bob.create_session_with(&alice.pk);
     assert_eq!(session_a, session_b);
   }
 
@@ -78,8 +78,8 @@ mod tests {
     let g = BigUint::from(2u32);
     let alice = DiffieHellmanParty::new(&p, &g);
     let bob = DiffieHellmanParty::new(&p, &g);
-    let session_a = alice.get_session_key(&bob.pk);
-    let session_b = bob.get_session_key(&alice.pk);
+    let session_a = alice.create_session_with(&bob.pk);
+    let session_b = bob.create_session_with(&alice.pk);
     assert_eq!(session_a, session_b);
   }
 }

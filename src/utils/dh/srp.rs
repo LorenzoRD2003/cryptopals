@@ -2,10 +2,17 @@ use num_bigint::{BigUint, RandBigInt};
 use num_traits::{One, Zero};
 use rand::thread_rng;
 use sha2::{Digest, Sha256};
-
 use crate::utils::mac::{hmac::Sha1HMac, sha1::Sha1Digest};
-
 use super::utils::{concat_biguints, get_dh_p, mod_exp, salt_then_hash_biguint};
+
+/*
+  Correctness proof (both things are equal to S)
+  (B - k * g^x)^(a + ux)
+    =  (B - kv)^(a + ux)
+    = (g^b)^(a + ux)
+    = (g^a * g^(ux))^b
+    = (A * v^u)^b
+*/
 
 struct ServerAbstraction {
   salt: BigUint,
@@ -38,7 +45,7 @@ impl ServerAbstraction {
     let mut hasher = Sha256::new();
     hasher.update(s.to_bytes_be());
     hasher.finalize().to_vec()
-  }  
+  }
 }
 
 struct ClientAbstraction {
@@ -153,7 +160,6 @@ impl SrpSimulator {
     let hmac = Sha1HMac::new(&key);
     hmac.verify(&self.server.salt.to_bytes_be(), attacker_digest)
   }
-
 }
 
 #[cfg(test)]

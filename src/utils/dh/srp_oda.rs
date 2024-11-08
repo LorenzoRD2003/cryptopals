@@ -5,7 +5,7 @@ use sha2::{Digest, Sha256};
 
 use crate::utils::mac::{hmac::Sha1HMac, sha1::Sha1Digest};
 
-use super::utils::{concat_biguints, get_dh_p, mod_exp, salt_then_hash_biguint};
+use super::utils::{get_dh_p, mod_exp, salt_then_hash_biguint};
 
 // ODA == Offline-Dictionary-Attack
 struct ServerAbstractionODA {
@@ -113,10 +113,42 @@ impl SrpSimulatorODA {
     hmac.verify(&self.server.salt.to_bytes_be(), client_digest)
   }
 
-  pub fn mitm_crack_password(&self) -> String {
+  pub fn mitm_crack_password(&self, dictionary: &Vec<String>) -> Option<String> {
+    // The thing is, M does NOT know the password. He wants the password
+    // M sends arbitrary (salt, s_pk, u) to C
+    // M chooses salt = 0, u = 1 to simplify the computations
+    let (salt, u) = (BigUint::zero(), BigUint::one());
+    let client_key = self.client.compute_key(
+      &self.password,
+      &self.n,
+      &self.server.pk,
+      &salt,
+      &u
+    );
+    let hmac = Sha1HMac::new(&client_key);
+    let client_digest: Sha1Digest = hmac.authenticate(&self.server.salt.to_bytes_be());
     
+    // The dictionary means that M is able to find the word if it is common
+    for possible_password in dictionary {
+      let possible_key = {
+        let x = salt_then_hash_biguint(&salt, possible_password);
+        // u = 1 → s = B^a * B^x = A^b * B^x (because of diffie_hellman)
+        let s = {
+          let f1 = mod_exp(&self.client.pk, &self.server.sk, &self.n);
+          let f2 = mod_exp(&self.server.pk, &x, &self.n);
+          (f1 * f2) % &self.n
+        };
+        let mut hasher = Sha256::new();
+        hasher.update(s.to_bytes_be());
+        hasher.finalize().to_vec()
+      };
+      let hmac = Sha1HMac::new(&possible_key);
+      if hmac.verify(&salt.to_bytes_be(), client_digest) {
+        return Some(possible_password.clone());
+      }
+    }
 
-    String::from("")
+    None
   }
 }
 

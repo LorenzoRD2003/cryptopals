@@ -1,11 +1,11 @@
+use cryptopals::utils::{
+  dh::utils::{get_dh_p, mod_exp, salt_then_hash_biguint},
+  mac::{hmac::Sha1HMac, sha1::Sha1Digest},
+};
 use num_bigint::{BigUint, RandBigInt};
 use num_traits::{One, Zero};
-use rand::thread_rng;
+use rand::{thread_rng, Rng};
 use sha2::{Digest, Sha256};
-
-use crate::utils::mac::{hmac::Sha1HMac, sha1::Sha1Digest};
-
-use super::utils::{get_dh_p, mod_exp, salt_then_hash_biguint};
 
 // ODA == Offline-Dictionary-Attack
 struct ServerAbstractionODA {
@@ -118,16 +118,12 @@ impl SrpSimulatorODA {
     // M sends arbitrary (salt, s_pk, u) to C
     // M chooses salt = 0, u = 1 to simplify the computations
     let (salt, u) = (BigUint::zero(), BigUint::one());
-    let client_key = self.client.compute_key(
-      &self.password,
-      &self.n,
-      &self.server.pk,
-      &salt,
-      &u
-    );
+    let client_key = self
+      .client
+      .compute_key(&self.password, &self.n, &self.server.pk, &salt, &u);
     let hmac = Sha1HMac::new(&client_key);
-    let client_digest: Sha1Digest = hmac.authenticate(&self.server.salt.to_bytes_be());
-    
+    let client_digest: Sha1Digest = hmac.authenticate(&salt.to_bytes_be());
+
     // The dictionary means that M is able to find the word if it is common
     for possible_password in dictionary {
       let possible_key = {
@@ -152,15 +148,28 @@ impl SrpSimulatorODA {
   }
 }
 
-#[cfg(test)]
-mod tests {
-  use super::*;
+fn main() {
+  let email = String::from("lorenzo@gmail.com");
+  let password = String::from("abcdefghijklm");
+  let srp = SrpSimulatorODA::for_email_password(&email, &password);
+  assert!(srp.validate());
 
-  #[test]
-  fn test_srp_oda() {
-    let email = String::from("lorenzo@gmail.com");
-    let password = String::from("abcdefghijklm");
-    let srp = SrpSimulatorODA::for_email_password(&email, &password);
-    assert!(srp.validate());
-  }
+  // Dictionary attack
+  let possible_passwords = vec![
+    String::from("HOLAQUETAL"),
+    String::from("BOCAJUNIORS"),
+    String::from("AguanteLionelMessi"),
+    String::from("MiltonGimenezElHuracan"),
+    String::from("ParalelePIPEDO"),
+    String::from("MCLPLODLK"),
+    String::from("Hubieras ganado las elecciones"),
+    String::from("EsExactamenteLoQueVote"),
+    String::from("JumanjiTop1PelisDeLaInfancia"),
+    String::from("BUUUUUUUUEEEEEEEEEEEEEE"),
+  ];
+  let index = thread_rng().gen_range(0..possible_passwords.len());
+  let crackable_srp = SrpSimulatorODA::for_email_password(&email, &possible_passwords[index]);
+  let result = crackable_srp.mitm_crack_password(&possible_passwords);
+  assert!(result.is_some());
+  println!("{}", result.unwrap());
 }

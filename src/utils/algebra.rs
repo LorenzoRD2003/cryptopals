@@ -1,4 +1,4 @@
-use num_bigint::{BigInt, BigUint, ToBigInt};
+use num_bigint::{BigInt, BigUint, RandBigInt, ToBigInt};
 use num_traits::{FromBytes, One, Zero};
 
 use super::conversion::hex_string::HexString;
@@ -82,6 +82,57 @@ pub fn inv_mod(a: &BigUint, m: &BigUint) -> Option<BigUint> {
   }
 }
 
+pub fn miller_rabin_test(n: &BigUint, k: u64) -> bool {
+  if *n == BigUint::from(2u8) || *n == BigUint::from(3u8) {
+    return true;
+  }
+  let mut d = n - BigUint::one();
+  let mut r = 0u64;
+  while &d % 2u64 == BigUint::zero() {
+    d >>= 1;
+    r += 1;
+  }
+  let mut rng = rand::thread_rng();
+  for _ in 0..k {
+    let a = rng.gen_biguint_range(&BigUint::from(2u8), n);
+    let mut x = mod_exp(&a, &d, &n);
+    if x == BigUint::one() || x == n - BigUint::one() {
+      continue;
+    }
+    let mut i = 1u64;
+    while i < r {
+      x = x.modpow(&BigUint::from(2u8), n);
+      if x == BigUint::one() {
+        return false;
+      } else if x == n - BigUint::one() {
+        break;
+      }
+      i += 1;
+    }
+    if i == r {
+      return false;
+    }
+  }
+  true
+}
+
+pub fn generate_prime(bits: u64, iterations: u64) -> BigUint {
+  let one = BigUint::one();
+  let two = BigUint::from(2u8);
+  loop {
+    let mut rng = rand::thread_rng();
+    let prime_candidate = rng.gen_biguint(bits);
+    let candidate = if &prime_candidate % &two == BigUint::zero() {
+      prime_candidate + &one
+    } else {
+      prime_candidate
+    };
+    if miller_rabin_test(&candidate, iterations) {
+      return candidate;
+    }
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -107,5 +158,26 @@ mod tests {
     let result = inv_mod(&a, &m);
     assert!(result.is_some());
     assert_eq!(result.unwrap(), BigUint::from(18633540u32));
+  }
+
+  #[test]
+  fn test_miller_rabin_prime() {
+    let prime = BigUint::from(7u8);
+    assert!(miller_rabin_test(&prime, 3));
+  }
+
+  /// Test that the Miller-Rabin test rejects composite numbers
+  #[test]
+  fn test_miller_rabin_composite() {
+    let composite = BigUint::from(15u8);
+    assert!(!miller_rabin_test(&composite, 3));
+  }
+
+  #[test]
+  fn test_generate_prime() {
+    let bits = 256;
+    let iterations = 15;
+    let prime = generate_prime(bits, iterations);
+    assert!(miller_rabin_test(&prime, iterations));
   }
 }

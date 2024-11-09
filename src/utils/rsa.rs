@@ -58,7 +58,6 @@ mod tests {
 
   #[test]
   fn test_rsa_small_numbers() {
-    dbg!(1);
     let rsa_keys: RSA2048Keys = RSA2048::generate_keys();
     let plaintext = 42u32.to_be_bytes().to_vec();
     let ciphertext = RSA2048::encrypt(&rsa_keys.pk, &plaintext);

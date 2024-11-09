@@ -1,6 +1,7 @@
 use cryptopals::utils::{
+  algebra::get_nist_prime,
   aes::{aes::AES, aes_error::AESError, utils::AESMode},
-  dh::{dh::{DiffieHellmanParty, DiffieHellmanSession}, utils::get_dh_p},
+  dh::{DiffieHellmanParty, DiffieHellmanSession},
   mac::sha1::Sha1,
 };
 use num_bigint::BigUint;
@@ -9,7 +10,7 @@ use rand::{thread_rng, Rng};
 use sha2::{Digest, Sha256};
 
 fn dh_protocol() -> Result<(), AESError> {
-  let (p, g) = (get_dh_p(), BigUint::from(2u32));
+  let (p, g) = (get_nist_prime(), BigUint::from(2u32));
   let alice = DiffieHellmanParty::new(&p, &g);
 
   // Alice sends (p, g, A) to Bob
@@ -40,7 +41,7 @@ fn dh_protocol() -> Result<(), AESError> {
 }
 
 fn mitm_attack_simulation() -> Result<(), AESError> {
-  let (p, g) = (get_dh_p(), BigUint::from(2u32));
+  let (p, g) = (get_nist_prime(), BigUint::from(2u32));
   let alice = DiffieHellmanParty::new(&p, &g);
 
   // M modifies what Alice sent to Bob. Replacing A by p

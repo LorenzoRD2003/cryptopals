@@ -3,7 +3,16 @@ use num_traits::{One, Zero};
 use rand::thread_rng;
 use sha2::{Digest, Sha256};
 use crate::utils::mac::{hmac::Sha1HMac, sha1::Sha1Digest};
-use super::utils::{concat_biguints, get_dh_p, mod_exp, salt_then_hash_biguint};
+
+use super::algebra::{concat_biguints, get_nist_prime, mod_exp};
+
+pub fn salt_then_hash_biguint(salt: &BigUint, password: &String) -> BigUint {
+  let mut hasher = Sha256::new();
+  hasher.update(salt.to_bytes_be());
+  hasher.update(password);
+  let xh = hasher.finalize();
+  BigUint::from_bytes_be(&xh)
+}
 
 /*
   Correctness proof (both things are equal to S)
@@ -101,7 +110,7 @@ pub struct SrpSimulator {
 
 impl SrpSimulator {
   pub fn for_email_password(email: &String, password: &String) -> Self {
-    let (n, g, k) = (get_dh_p(), BigUint::from(2u32), BigUint::from(3u32));
+    let (n, g, k) = (get_nist_prime(), BigUint::from(2u32), BigUint::from(3u32));
     Self {
       server: ServerAbstraction::define_server(&password, &n, &g, &k),
       client: ClientAbstraction::define_client(&n, &g),

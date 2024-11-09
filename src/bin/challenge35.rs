@@ -1,6 +1,7 @@
 use cryptopals::utils::{
+  algebra::get_nist_prime,
   aes::{aes::AES, aes_error::AESError, utils::AESMode},
-  dh::{dh::{DiffieHellmanParty, DiffieHellmanSession}, utils::get_dh_p},
+  dh::{DiffieHellmanParty, DiffieHellmanSession},
   mac::sha1::Sha1,
 };
 use num_bigint::BigUint;
@@ -9,7 +10,7 @@ use rand::{thread_rng, Rng};
 use sha2::{Digest, Sha256};
 
 fn dh_with_ack() -> Result<(), AESError> {
-  let (p, g) = (get_dh_p(), BigUint::from(2u32));
+  let (p, g) = (get_nist_prime(), BigUint::from(2u32));
   let alice = DiffieHellmanParty::new(&p, &g);
 
   // Alice sends (p,g) to Bob
@@ -44,7 +45,7 @@ fn dh_with_ack() -> Result<(), AESError> {
 }
 
 fn mitm_attack_with_g_one() -> Result<(), AESError> {
-  let (p, g) = (get_dh_p(), BigUint::from(2u32));
+  let (p, g) = (get_nist_prime(), BigUint::from(2u32));
   let alice = DiffieHellmanParty::new(&p, &g);
 
   // Alice sends (p,g) to Bob. M modifies g to 1
@@ -76,7 +77,7 @@ fn mitm_attack_with_g_one() -> Result<(), AESError> {
 }
 
 fn mitm_attack_with_g_p() -> Result<(), AESError> {
-  let (p, g) = (get_dh_p(), BigUint::from(2u32));
+  let (p, g) = (get_nist_prime(), BigUint::from(2u32));
   let alice = DiffieHellmanParty::new(&p, &g);
 
   // Alice sends (p,g) to Bob. M modifies g to p
@@ -107,7 +108,7 @@ fn mitm_attack_with_g_p() -> Result<(), AESError> {
 }
 
 fn mitm_attack_with_g_p_minus_one() -> Result<(), AESError> {
-  let (p, g) = (get_dh_p(), BigUint::from(2u32));
+  let (p, g) = (get_nist_prime(), BigUint::from(2u32));
   let alice = DiffieHellmanParty::new(&p, &g);
 
   // Alice sends (p,g) to Bob. M modifies g to p - 1

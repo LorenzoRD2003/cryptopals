@@ -1,7 +1,8 @@
 use crate::utils::conversion::hex_string::HexString;
 use core::fmt;
 
-use super::{aes_error::AESError, aes_key::AESKey, constants::*, utils::galois_multiplication};
+use super::{aes_error::AESError, aes_key::AESKey, constants::*};
+use crate::utils::algebra::galois_multiplication;
 
 #[derive(Debug, Clone, Copy, Hash)]
 pub struct AESBlock {

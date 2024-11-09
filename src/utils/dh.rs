@@ -1,4 +1,4 @@
-use super::utils::mod_exp;
+use crate::utils::algebra::mod_exp;
 use num_bigint::{BigUint, RandBigInt};
 use rand::thread_rng;
 use sha2::{Digest, Sha256};
@@ -48,7 +48,7 @@ impl DiffieHellmanParty {
 
 #[cfg(test)]
 mod tests {
-  use crate::utils::dh::utils::get_dh_p;
+  use crate::utils::algebra::get_nist_prime;
 
   use super::*;
 
@@ -74,7 +74,7 @@ mod tests {
 
   #[test]
   fn test_diffie_hellman_with_bigger_nums() {
-    let p = get_dh_p();
+    let p = get_nist_prime();
     let g = BigUint::from(2u32);
     let alice = DiffieHellmanParty::new(&p, &g);
     let bob = DiffieHellmanParty::new(&p, &g);

@@ -1,5 +1,6 @@
 use cryptopals::utils::{
-  dh::utils::{get_dh_p, mod_exp, salt_then_hash_biguint},
+  algebra::{get_nist_prime, mod_exp},
+  srp::salt_then_hash_biguint,
   mac::{hmac::Sha1HMac, sha1::Sha1Digest},
 };
 use num_bigint::{BigUint, RandBigInt};
@@ -77,7 +78,7 @@ pub struct SrpSimulatorODA {
 
 impl SrpSimulatorODA {
   pub fn for_email_password(email: &String, password: &String) -> Self {
-    let (n, g, k) = (get_dh_p(), BigUint::from(2u32), BigUint::from(3u32));
+    let (n, g, k) = (get_nist_prime(), BigUint::from(2u32), BigUint::from(3u32));
     Self {
       server: ServerAbstractionODA::define_server(&password, &n, &g),
       client: ClientAbstractionODA::define_client(&n, &g),

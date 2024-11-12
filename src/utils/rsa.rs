@@ -1,18 +1,20 @@
+use crate::utils::algebra::{generate_prime, inv_mod, mod_exp};
 use num_bigint::BigUint;
 use num_traits::One;
-use crate::utils::algebra::{generate_prime, inv_mod, mod_exp};
 
-pub struct RSA {
+pub struct RSAKeys {
   pub sk: (BigUint, BigUint), // (d,n)
   pub pk: (BigUint, BigUint), // (e,n)
 }
+
+pub struct RSA {}
 
 impl RSA {
   const E: u8 = 3;
   const BITS: u64 = 2048;
   const ITERATIONS: u64 = 7;
 
-  pub fn generate_keys() -> Self {
+  pub fn generate_keys() -> RSAKeys {
     loop {
       let p: BigUint = generate_prime(Self::BITS, Self::ITERATIONS);
       let q: BigUint = generate_prime(Self::BITS, Self::ITERATIONS);
@@ -21,7 +23,7 @@ impl RSA {
       let option_d = inv_mod(&BigUint::from(Self::E), &et);
       match option_d {
         Some(d) => {
-          return Self {
+          return RSAKeys {
             sk: (d, n.clone()),
             pk: (BigUint::from(Self::E), n),
           };
@@ -42,13 +44,33 @@ impl RSA {
     let res = mod_exp(&c, &sk.0, &sk.1);
     res.to_bytes_be()
   }
+
+  // Pre: p, q are primes
+  pub fn generate_keys_with_given_size(bits: u64) -> RSAKeys {
+    loop {
+      let p: BigUint = generate_prime(bits, Self::ITERATIONS);
+      let q: BigUint = generate_prime(bits, Self::ITERATIONS);
+      let n = &p * &q;
+      let et = (&p - BigUint::one()) * (&q - BigUint::one());
+      let option_d = inv_mod(&BigUint::from(Self::E), &et);
+      match option_d {
+        Some(d) => {
+          return RSAKeys {
+            sk: (d, n.clone()),
+            pk: (BigUint::from(Self::E), n),
+          };
+        }
+        None => continue,
+      }
+    }
+  }
 }
 
 #[cfg(test)]
 mod tests {
+  use super::*;
   use num_bigint::RandBigInt;
   use rand::thread_rng;
-  use super::*;
 
   #[test]
   fn test_rsa_small_numbers() {
@@ -70,7 +92,7 @@ mod tests {
 
   #[test]
   fn test_rsa_text() {
-    let rsa_keys: RSA = RSA::generate_keys();
+    let rsa_keys: RSAKeys = RSA::generate_keys();
     let plaintext = b"SOY BOSTERO DE LA CUNA A LA TUMBA Y NUNCA DESCENDERE".to_vec();
     let ciphertext = RSA::encrypt(&rsa_keys.pk, &plaintext);
     assert_eq!(plaintext, RSA::decrypt(&rsa_keys.sk, &ciphertext));

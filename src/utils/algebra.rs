@@ -133,6 +133,27 @@ pub fn generate_prime(bits: u64, iterations: u64) -> BigUint {
   }
 }
 
+// Pre: n must be a perfect cube
+pub fn cbrt(n: &BigUint) -> BigUint {
+  if *n == BigUint::zero() {
+    return BigUint::zero();
+  }
+  let mut low = BigUint::one();
+  let mut high = n.clone();
+  while low < high {
+    let mid = (&low + &high) >> 1;
+    let m3 = &mid * &mid * &mid;
+    if &m3 == n {
+      return mid;
+    } else if &m3 < n {
+      low = mid + BigUint::one();
+    } else {
+      high = mid;
+    }
+  }
+  low - BigUint::one()
+}
+
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -166,7 +187,6 @@ mod tests {
     assert!(miller_rabin_test(&prime, 3));
   }
 
-  /// Test that the Miller-Rabin test rejects composite numbers
   #[test]
   fn test_miller_rabin_composite() {
     let composite = BigUint::from(15u8);
@@ -179,5 +199,12 @@ mod tests {
     let iterations = 15;
     let prime = generate_prime(bits, iterations);
     assert!(miller_rabin_test(&prime, iterations));
+  }
+
+  #[test]
+  fn test_cube_root() {
+    let n = BigUint::parse_bytes(b"1000000000000000000000000000000000", 10).unwrap();
+    let result = cbrt(&n);
+    assert_eq!(result, BigUint::parse_bytes(b"100000000000", 10).unwrap())
   }
 }

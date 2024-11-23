@@ -11,7 +11,7 @@ pub struct RSA {}
 
 impl RSA {
   const E: u8 = 3;
-  const BITS: u64 = 2048;
+  const BITS: u64 = 128;
   const ITERATIONS: u64 = 7;
 
   pub fn generate_keys() -> RSAKeys {
@@ -34,15 +34,27 @@ impl RSA {
   }
 
   pub fn encrypt<S: AsRef<[u8]>>(pk: &(BigUint, BigUint), plaintext: &S) -> Vec<u8> {
-    let m = BigUint::from_bytes_be(plaintext.as_ref());
-    let res = mod_exp(&m, &pk.0, &pk.1);
-    res.to_bytes_be()
+    let (e, n) = pk;
+    let n_size = ((n.bits() + 7) / 8) as usize;
+    let mut ciphertext = Vec::new();
+    for chunk in plaintext.as_ref().chunks(n_size - 11) {  // reserve 11 bytes for padding
+        let m = BigUint::from_bytes_be(chunk);
+        let ciphertext_chunk = mod_exp(&m, &e, &n);
+        ciphertext.extend_from_slice(&ciphertext_chunk.to_bytes_be());
+    }
+    ciphertext
   }
 
   pub fn decrypt<S: AsRef<[u8]>>(sk: &(BigUint, BigUint), ciphertext: &S) -> Vec<u8> {
-    let c = BigUint::from_bytes_be(ciphertext.as_ref());
-    let res = mod_exp(&c, &sk.0, &sk.1);
-    res.to_bytes_be()
+    let (d, n) = sk;
+    let n_size = ((n.bits() + 7) / 8) as usize;
+    let mut plaintext = Vec::new();
+    for chunk in ciphertext.as_ref().chunks(n_size) {
+        let m = BigUint::from_bytes_be(chunk);
+        let plaintext_chunk = mod_exp(&m, &d, &n);
+        plaintext.extend_from_slice(&plaintext_chunk.to_bytes_be());
+    }
+    plaintext
   }
 
   // Pre: p, q are primes

@@ -1,6 +1,7 @@
 use crate::utils::algebra::{generate_prime, inv_mod, mod_exp};
 use num_bigint::BigUint;
 use num_traits::One;
+use rand::{thread_rng, Rng};
 
 pub struct RSAKeys {
   pub sk: (BigUint, BigUint), // (d,n)
@@ -13,6 +14,30 @@ impl RSA {
   const E: u8 = 3;
   const BITS: u64 = 128;
   const ITERATIONS: u64 = 7;
+
+  fn pkcs1_v15_pad(bytes: &[u8], n_size: usize) -> Vec<u8> {
+    let padding_len = n_size - 3 - bytes.len();
+    let mut rng = thread_rng();
+    let mut padded = vec![0x00, 0x02];
+    for _ in 0..padding_len {
+      padded.push(rng.gen_range(1..=255));
+    }
+    padded.push(0x00);
+    padded.extend_from_slice(bytes);
+    padded
+  }
+
+  fn pkcs1_v15_unpad(padded_bytes: &[u8]) -> Vec<u8> {
+    if padded_bytes[0] != 0x00 || padded_bytes[1] != 0x02 {
+      return padded_bytes.to_vec();
+    }
+    let mut padding_end = 1;
+    while padded_bytes[padding_end] != 0x00 {
+      padding_end += 1;
+    }
+    padding_end += 1;
+    padded_bytes[padding_end..].to_vec()
+  }
 
   pub fn generate_keys() -> RSAKeys {
     loop {
@@ -37,10 +62,18 @@ impl RSA {
     let (e, n) = pk;
     let n_size = ((n.bits() + 7) / 8) as usize;
     let mut ciphertext = Vec::new();
-    for chunk in plaintext.as_ref().chunks(n_size - 11) {  // reserve 11 bytes for padding
-        let m = BigUint::from_bytes_be(chunk);
-        let ciphertext_chunk = mod_exp(&m, &e, &n);
-        ciphertext.extend_from_slice(&ciphertext_chunk.to_bytes_be());
+    dbg!(&n_size);
+    for chunk in plaintext.as_ref().chunks(n_size - 3) {
+      let padded_chunk = if chunk.len() < n_size {
+        Self::pkcs1_v15_pad(chunk, n_size)
+      } else {
+        chunk.to_vec()
+      };
+      let m = BigUint::from_bytes_be(&padded_chunk);
+      let ciphertext_chunk = mod_exp(&m, &e, &n).to_bytes_be();
+      let zeros = n_size - ciphertext_chunk.len();
+      let with_trailing_zeros: Vec<u8> = [vec![0x00; zeros], ciphertext_chunk].concat();
+      ciphertext.extend_from_slice(&with_trailing_zeros);
     }
     ciphertext
   }
@@ -50,9 +83,14 @@ impl RSA {
     let n_size = ((n.bits() + 7) / 8) as usize;
     let mut plaintext = Vec::new();
     for chunk in ciphertext.as_ref().chunks(n_size) {
-        let m = BigUint::from_bytes_be(chunk);
-        let plaintext_chunk = mod_exp(&m, &d, &n);
-        plaintext.extend_from_slice(&plaintext_chunk.to_bytes_be());
+      let m = BigUint::from_bytes_be(chunk);
+      let plaintext_chunk = mod_exp(&m, &d, &n).to_bytes_be();
+      let unpadded_chunk = {
+        let zeros = n_size - plaintext_chunk.len();
+        let with_trailing_zeros = [vec![0x00; zeros], plaintext_chunk].concat();
+        Self::pkcs1_v15_unpad(&with_trailing_zeros)
+      };
+      plaintext.extend_from_slice(&unpadded_chunk);
     }
     plaintext
   }
@@ -105,7 +143,8 @@ mod tests {
   #[test]
   fn test_rsa_text() {
     let rsa_keys: RSAKeys = RSA::generate_keys();
-    let plaintext = b"SOY BOSTERO DE LA CUNA A LA TUMBA Y NUNCA DESCENDERE".to_vec();
+    //let plaintext = b"SOY BOSTERO DE LA CUNA A LA TUMBA Y NUNCA DESCENDERE".to_vec();
+    let plaintext = b"AAAAAAAAAAA Y NUNCA DESCENDERE".to_vec();
     let ciphertext = RSA::encrypt(&rsa_keys.pk, &plaintext);
     assert_eq!(plaintext, RSA::decrypt(&rsa_keys.sk, &ciphertext));
   }

@@ -1,11 +1,16 @@
-use cryptopals::utils::{algebra::{inv_mod, mod_exp}, mac::sha1::{Sha1, Sha1Digest}, rsa::{RSAKeys, RSA}};
+use cryptopals::utils::{
+  algebra::{inv_mod, mod_exp},
+  mac::sha1::{Sha1, Sha1Digest},
+  padding::pkcs1_v15_unpad,
+  rsa::{RSAKeys, RSA},
+};
 use num_bigint::{BigUint, RandBigInt};
 use rand::{rngs::ThreadRng, thread_rng, Rng};
 
 struct Server {
   rng: ThreadRng,
   pub keys: RSAKeys,
-  hashed_messages: Vec<Sha1Digest>
+  hashed_messages: Vec<Sha1Digest>,
 }
 
 impl Server {
@@ -13,7 +18,7 @@ impl Server {
     Self {
       rng: thread_rng(),
       keys: RSA::generate_keys_with_given_size(128),
-      hashed_messages: vec![]
+      hashed_messages: vec![],
     }
   }
 
@@ -30,7 +35,7 @@ impl Server {
   pub fn decrypt_ciphertext<S: AsRef<[u8]>>(&mut self, ciphertext: &S) -> Result<Vec<u8>, String> {
     let hash = Sha1::hash(ciphertext);
     if self.hashed_messages.contains(&hash) {
-      return Err("Message already decrypted.".to_string())
+      return Err("Message already decrypted.".to_string());
     }
     self.hashed_messages.push(hash);
     Ok(RSA::decrypt(&self.keys.sk, ciphertext))
@@ -62,21 +67,25 @@ fn main() {
   let s = thread_rng().gen_biguint_range(&BigUint::from(2u8), &n);
   let m = mod_exp(&s, &e, &n);
   let inv_s = inv_mod(&s, &n).unwrap();
-  let chunk_size = (n.bits() + 7) / 8;
+  let chunk_size = ((n.bits() + 7) / 8) as usize;
 
   // First of all, we have to do this in chunks of size n
   let mut dif_ciphertext: Vec<u8> = vec![];
-  for ciphertext_chunk in ciphertext.chunks(chunk_size as usize) {
+  for ciphertext_chunk in ciphertext.chunks(chunk_size) {
     let c = BigUint::from_bytes_be(ciphertext_chunk);
     let cx = (&m * &c) % &n;
     dif_ciphertext.extend(cx.to_bytes_be());
   }
   let dif_plaintext = server.decrypt_ciphertext(&dif_ciphertext).unwrap();
   let mut plaintext: Vec<u8> = vec![];
-  for px_chunk in dif_plaintext.chunks(chunk_size as usize) {
+  for px_chunk in dif_plaintext.chunks(chunk_size) {
     let px = BigUint::from_bytes_be(px_chunk);
     let p = (&px * &inv_s) % &n;
-    plaintext.extend(p.to_bytes_be());
+    let p_bytes = p.to_bytes_be();
+    let zeros = chunk_size - p_bytes.len();
+    let extended_p = [vec![0; zeros], p_bytes].concat();
+    let unpadded_p = pkcs1_v15_unpad(&extended_p);
+    plaintext.extend(unpadded_p);
   }
   println!("{}", String::from_utf8_lossy(&plaintext));
 }

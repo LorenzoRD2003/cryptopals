@@ -7,3 +7,4 @@ pub mod mac;
 pub mod dh;
 pub mod srp;
 pub mod rsa;
+pub mod padding;

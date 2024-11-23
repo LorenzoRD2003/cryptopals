@@ -1,7 +1,8 @@
 use crate::utils::algebra::{generate_prime, inv_mod, mod_exp};
 use num_bigint::BigUint;
 use num_traits::One;
-use rand::{thread_rng, Rng};
+
+use super::padding::{pkcs1_v15_pad, pkcs1_v15_unpad};
 
 pub struct RSAKeys {
   pub sk: (BigUint, BigUint), // (d,n)
@@ -14,31 +15,6 @@ impl RSA {
   const E: u8 = 3;
   const BITS: u64 = 128;
   const ITERATIONS: u64 = 7;
-
-  fn pkcs1_v15_pad(bytes: &[u8], n_size: usize) -> Vec<u8> {
-    let padding_len = n_size - 3 - bytes.len();
-    let mut rng = thread_rng();
-    let mut padded = vec![0x00, 0x02];
-    for _ in 0..padding_len {
-      padded.push(rng.gen_range(1..=255));
-    }
-    padded.push(0x00);
-    padded.extend_from_slice(bytes);
-    padded
-  }
-
-  fn pkcs1_v15_unpad(padded_bytes: &[u8]) -> Vec<u8> {
-    if padded_bytes[0] != 0x00 || padded_bytes[1] != 0x02 {
-      return padded_bytes.to_vec();
-    }
-    let mut padding_end = 1;
-    while padded_bytes[padding_end] != 0x00 {
-      padding_end += 1;
-    }
-    padding_end += 1;
-    padded_bytes[padding_end..].to_vec()
-  }
-
   pub fn generate_keys() -> RSAKeys {
     loop {
       let p: BigUint = generate_prime(Self::BITS, Self::ITERATIONS);
@@ -64,7 +40,7 @@ impl RSA {
     let mut ciphertext = Vec::new();
     for chunk in plaintext.as_ref().chunks(n_size - 3) {
       let padded_chunk = if chunk.len() < n_size {
-        Self::pkcs1_v15_pad(chunk, n_size)
+        pkcs1_v15_pad(chunk, n_size)
       } else {
         chunk.to_vec()
       };
@@ -87,7 +63,7 @@ impl RSA {
       let unpadded_chunk = {
         let zeros = n_size - plaintext_chunk.len();
         let with_trailing_zeros = [vec![0x00; zeros], plaintext_chunk].concat();
-        Self::pkcs1_v15_unpad(&with_trailing_zeros)
+        pkcs1_v15_unpad(&with_trailing_zeros)
       };
       plaintext.extend_from_slice(&unpadded_chunk);
     }

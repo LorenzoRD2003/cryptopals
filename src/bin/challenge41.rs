@@ -4,7 +4,7 @@ use rand::{rngs::ThreadRng, thread_rng, Rng};
 
 struct Server {
   rng: ThreadRng,
-  keys: RSAKeys,
+  pub keys: RSAKeys,
   hashed_messages: Vec<Sha1Digest>
 }
 
@@ -18,10 +18,11 @@ impl Server {
   }
 
   pub fn encrypt_with_timestamp<S: AsRef<[u8]>>(&mut self, message: &S) -> Vec<u8> {
-    let time: [u8; 16] = self.rng.gen();
+    let time: u32 = self.rng.gen();
+    let string_time = time.to_string();
     let mut message_with_timestamp = message.as_ref().to_vec();
-    message_with_timestamp.extend_from_slice(b"{\n time:");
-    message_with_timestamp.extend_from_slice(&time);
+    message_with_timestamp.extend_from_slice(b"\n{\n  time: ");
+    message_with_timestamp.extend_from_slice(string_time.as_ref());
     message_with_timestamp.extend_from_slice(b",\n  social: '555-55-5555',\n}");
     RSA::encrypt(&self.keys.pk, &message_with_timestamp)
   }
@@ -43,13 +44,12 @@ impl Server {
 fn main() {
   let mut server = Server::start();
   let message = b"SENIORES SOY DE BOCA Y LO SIGO A TODOS LADOS".to_vec();
-  let c_bytes = server.encrypt_with_timestamp(&message);
-  let c = BigUint::from_bytes_be(&c_bytes);
+  let ciphertext = server.encrypt_with_timestamp(&message);
   let (e, n) = server.retrieve_pk();
 
-  let expected_message = server.decrypt_ciphertext(&c_bytes).unwrap();
+  let expected_message = server.decrypt_ciphertext(&ciphertext).unwrap();
   println!("{}", String::from_utf8_lossy(&expected_message));
-  let expected_error = server.decrypt_ciphertext(&c_bytes).unwrap_err();
+  let expected_error = server.decrypt_ciphertext(&ciphertext).unwrap_err();
   println!("{}", expected_error);
 
   /*
@@ -60,11 +60,23 @@ fn main() {
     → P = P' * S^-1 (mod N)
   */
   let s = thread_rng().gen_biguint_range(&BigUint::from(2u8), &n);
-  let px = {
-    let cx = (mod_exp(&s, &e, &n) * c) % &n;
-    let px_bytes = server.decrypt_ciphertext(&cx.to_bytes_be()).unwrap();
-    BigUint::from_bytes_be(&px_bytes)
-  };
-  let p = px * inv_mod(&s, &n).unwrap();
-  println!("{}", String::from_utf8_lossy(&p.to_bytes_be()));
+  let m = mod_exp(&s, &e, &n);
+  let inv_s = inv_mod(&s, &n).unwrap();
+  let chunk_size = (n.bits() + 7) / 8;
+
+  // First of all, we have to do this in chunks of size n
+  let mut dif_ciphertext: Vec<u8> = vec![];
+  for ciphertext_chunk in ciphertext.chunks(chunk_size as usize) {
+    let c = BigUint::from_bytes_be(ciphertext_chunk);
+    let cx = (&m * &c) % &n;
+    dif_ciphertext.extend(cx.to_bytes_be());
+  }
+  let dif_plaintext = server.decrypt_ciphertext(&dif_ciphertext).unwrap();
+  let mut plaintext: Vec<u8> = vec![];
+  for px_chunk in dif_plaintext.chunks(chunk_size as usize) {
+    let px = BigUint::from_bytes_be(px_chunk);
+    let p = (&px * &inv_s) % &n;
+    plaintext.extend(p.to_bytes_be());
+  }
+  println!("{}", String::from_utf8_lossy(&plaintext));
 }

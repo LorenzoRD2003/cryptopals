@@ -62,7 +62,6 @@ impl RSA {
     let (e, n) = pk;
     let n_size = ((n.bits() + 7) / 8) as usize;
     let mut ciphertext = Vec::new();
-    dbg!(&n_size);
     for chunk in plaintext.as_ref().chunks(n_size - 3) {
       let padded_chunk = if chunk.len() < n_size {
         Self::pkcs1_v15_pad(chunk, n_size)
@@ -143,8 +142,7 @@ mod tests {
   #[test]
   fn test_rsa_text() {
     let rsa_keys: RSAKeys = RSA::generate_keys();
-    //let plaintext = b"SOY BOSTERO DE LA CUNA A LA TUMBA Y NUNCA DESCENDERE".to_vec();
-    let plaintext = b"AAAAAAAAAAA Y NUNCA DESCENDERE".to_vec();
+    let plaintext = b"SOY BOSTERO DE LA CUNA A LA TUMBA Y NUNCA DESCENDERE".to_vec();
     let ciphertext = RSA::encrypt(&rsa_keys.pk, &plaintext);
     assert_eq!(plaintext, RSA::decrypt(&rsa_keys.sk, &ciphertext));
   }

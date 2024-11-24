@@ -4,7 +4,7 @@ use rand::thread_rng;
 use sha2::{Digest, Sha256};
 use crate::utils::mac::{hmac::Sha1HMac, sha1::Sha1Digest};
 
-use super::algebra::{concat_biguints, get_nist_prime, mod_exp};
+use super::algebra::{bigint_utils::concat_biguints, modulo::mod_exp, primes::get_nist_prime};
 
 pub fn salt_then_hash_biguint(salt: &BigUint, password: &String) -> BigUint {
   let mut hasher = Sha256::new();

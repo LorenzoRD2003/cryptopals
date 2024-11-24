@@ -1,5 +1,5 @@
 use cryptopals::utils::{
-  algebra::{inv_mod, mod_exp},
+  algebra::modulo::{inv_mod, mod_exp},
   mac::sha1::{Sha1, Sha1Digest},
   padding::pkcs1_unpad,
   rsa::{RSAKeys, RSA},

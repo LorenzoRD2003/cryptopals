@@ -1,5 +1,5 @@
 use cryptopals::utils::{
-  algebra::{get_nist_prime, mod_exp},
+  algebra::{primes::get_nist_prime, modulo::mod_exp},
   srp::salt_then_hash_biguint,
   mac::{hmac::Sha1HMac, sha1::Sha1Digest},
 };

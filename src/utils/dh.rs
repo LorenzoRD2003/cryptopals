@@ -1,7 +1,8 @@
-use crate::utils::algebra::mod_exp;
 use num_bigint::{BigUint, RandBigInt};
 use rand::thread_rng;
 use sha2::{Digest, Sha256};
+
+use super::algebra::modulo::mod_exp;
 
  // The session is "local" for each party, their params are never sent so they are set to public to be able to access them
 #[derive(Debug, Clone, PartialEq)]
@@ -48,9 +49,10 @@ impl DiffieHellmanParty {
 
 #[cfg(test)]
 mod tests {
-  use crate::utils::algebra::get_nist_prime;
 
-  use super::*;
+  use crate::utils::algebra::primes::get_nist_prime;
+
+use super::*;
 
   #[test]
   fn test_mod_exp() {

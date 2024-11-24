@@ -1,8 +1,7 @@
-use crate::utils::algebra::{generate_prime, inv_mod, mod_exp};
 use num_bigint::BigUint;
 use num_traits::One;
 
-use super::padding::{pkcs1_pad, pkcs1_unpad};
+use super::{algebra::{modulo::{inv_mod, mod_exp}, primes::generate_prime}, padding::{pkcs1_pad, pkcs1_unpad}};
 
 pub struct RSAKeys {
   pub sk: (BigUint, BigUint), // (d,n)

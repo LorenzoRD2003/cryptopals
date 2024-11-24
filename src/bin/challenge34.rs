@@ -1,5 +1,5 @@
 use cryptopals::utils::{
-  algebra::get_nist_prime,
+  algebra::primes::get_nist_prime,
   aes::{aes::AES, aes_error::AESError, utils::AESMode},
   dh::{DiffieHellmanParty, DiffieHellmanSession},
   mac::sha1::Sha1,

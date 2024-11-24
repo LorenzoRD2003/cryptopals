@@ -1,5 +1,5 @@
 use cryptopals::utils::{
-  algebra::cbrt,
+  algebra::bigint_utils::cbrt,
   mac::sha1::{Sha1, Sha1Digest},
   rsa::{RSAKeys, RSA},
 };

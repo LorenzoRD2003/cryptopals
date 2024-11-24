@@ -1,4 +1,7 @@
-use cryptopals::utils::{algebra::{cbrt, inv_mod}, rsa::RSA};
+use cryptopals::utils::{
+  algebra::{bigint_utils::cbrt, modulo::inv_mod},
+  rsa::RSA,
+};
 use num_bigint::BigUint;
 
 fn main() {

@@ -9,9 +9,9 @@ fn main() {
 
   let result = {
     let (c1, c2, c3) = (
-      BigUint::from_bytes_be(RSA::encrypt(&keys_1.pk, &plaintext).as_ref()),
-      BigUint::from_bytes_be(RSA::encrypt(&keys_2.pk, &plaintext).as_ref()),
-      BigUint::from_bytes_be(RSA::encrypt(&keys_3.pk, &plaintext).as_ref()),
+      BigUint::from_bytes_be(RSA::encrypt_with_key(&keys_1.pk, &plaintext).as_ref()),
+      BigUint::from_bytes_be(RSA::encrypt_with_key(&keys_2.pk, &plaintext).as_ref()),
+      BigUint::from_bytes_be(RSA::encrypt_with_key(&keys_3.pk, &plaintext).as_ref()),
     );
     let (n1, n2, n3) = (keys_1.pk.1, keys_2.pk.1, keys_3.pk.1);
     let (m1, m2, m3) = (&n2 * &n3, &n1 * &n3, &n1 * &n2);

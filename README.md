@@ -3,7 +3,7 @@ All the work in this repository is done by me while studying cryptography and le
 
 Some of the solutions to the challenges are tests in the files. Still in progress. I plan to complete it during my free time.
 
-## Progress: 62% 🚀🚀🚀
+## Progress: 64% 🚀🚀🚀
 
 ### Set 1: Basics ✅
   - Convert hex to base64 ✅
@@ -57,7 +57,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
 
 ### Set 6: RSA and DSA 🚩
   - Implement unpadded message recovery oracle ✅
-  - Bleichenbacher's e=3 RSA Attack ❌
+  - Bleichenbacher's e=3 RSA Attack ✅
   - DSA key recovery from nonce ❌
   - DSA nonce recovery from repeated nonce ❌
   - DSA parameter tampering ❌

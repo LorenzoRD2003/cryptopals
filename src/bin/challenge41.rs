@@ -1,7 +1,7 @@
 use cryptopals::utils::{
   algebra::{inv_mod, mod_exp},
   mac::sha1::{Sha1, Sha1Digest},
-  padding::pkcs1_v15_unpad,
+  padding::pkcs1_unpad,
   rsa::{RSAKeys, RSA},
 };
 use num_bigint::{BigUint, RandBigInt};
@@ -29,7 +29,7 @@ impl Server {
     message_with_timestamp.extend_from_slice(b"\n{\n  time: ");
     message_with_timestamp.extend_from_slice(string_time.as_ref());
     message_with_timestamp.extend_from_slice(b",\n  social: '555-55-5555',\n}");
-    RSA::encrypt(&self.keys.pk, &message_with_timestamp)
+    RSA::encrypt_with_key(&self.keys.pk, &message_with_timestamp)
   }
 
   pub fn decrypt_ciphertext<S: AsRef<[u8]>>(&mut self, ciphertext: &S) -> Result<Vec<u8>, String> {
@@ -38,7 +38,7 @@ impl Server {
       return Err("Message already decrypted.".to_string());
     }
     self.hashed_messages.push(hash);
-    Ok(RSA::decrypt(&self.keys.sk, ciphertext))
+    Ok(RSA::decrypt_with_key(&self.keys.sk, ciphertext))
   }
 
   pub fn retrieve_pk(&self) -> (BigUint, BigUint) {
@@ -84,7 +84,7 @@ fn main() {
     let p_bytes = p.to_bytes_be();
     let zeros = chunk_size - p_bytes.len();
     let extended_p = [vec![0; zeros], p_bytes].concat();
-    let unpadded_p = pkcs1_v15_unpad(&extended_p);
+    let unpadded_p = pkcs1_unpad(&extended_p);
     plaintext.extend(unpadded_p);
   }
   println!("{}", String::from_utf8_lossy(&plaintext));

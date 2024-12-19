@@ -33,6 +33,23 @@ impl SignerVerifierAPI {
   }
 }
 
+/*
+  vector de tamaño n_size (tamaño de la pk en bytes)
+  00 01 ff ff ff ff 00 DIGEST 00 00 ... 00
+  Asi es como se ve un bloque formateado PKCS1.5 antes de ser encriptado. luego, M = vector
+
+  La idea es que un verificador incorrecto solamente va a testear la primera parte (y llegar hasta el digest)
+  y no la longitud de lo que viene despues (que sea efectivamente un digest y no algo mas largo)
+
+  El mensaje se encripta haciendo C = M^d (mod n) y se decripta haciendo M = C^e (mod n)
+  donde en particular e = 3 y d = 3^-1 (mod phi(n))
+
+  Ahora bien, si podemos tener mensajes que el parser considera como validos dejando ceros al final,
+  podemos poner lo que queramos al final. Y que pasa si tenemos suficiente espacio como para hacer un cubo perfecto?
+  Podemos hacerle raiz cubica en enteros y daria lo mismo que hacer M^d.
+  Entonces, para ese mensaje podriamos construir una firma valida (forge signature) sin conocer d
+*/
+
 fn main() {
   let mut api = SignerVerifierAPI::start();
   let message = b"hi mom";

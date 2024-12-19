@@ -8,3 +8,4 @@ pub mod dh;
 pub mod srp;
 pub mod rsa;
 pub mod padding;
+pub mod dsa;

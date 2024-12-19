@@ -27,6 +27,8 @@ impl DSA {
       16,
     )
     .unwrap();
+    assert_eq!((&p - BigUint::one()) % &q, BigUint::zero()); // q | p - 1
+    assert_eq!(mod_exp(&g, &q, &p), BigUint::one());
     Self { p, q, g }
   }
 
@@ -39,14 +41,15 @@ impl DSA {
 
   pub fn sign<S: AsRef<[u8]>>(&self, x: &BigUint, message: &S) -> (BigUint, BigUint) {
     let (mut r, mut s) = (BigUint::zero(), BigUint::zero());
-    let h = BigUint::from_bytes_be(&Sha1::hash(message));
+    let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q;
     while r.is_zero() || s.is_zero() {
       let k = thread_rng().gen_biguint_range(&BigUint::from(2u8), &self.q);
-      r = mod_exp(&self.g, x, &self.p) % &self.q;
+      r = mod_exp(&self.g, &k, &self.p) % &self.q;
       if r.is_zero() {
         continue;
       }
-      s = (inv_mod(&k, &self.q).unwrap() * (&h + x * &r)) % &self.q;
+      let inv_k = inv_mod(&k, &self.q).unwrap();
+      s = (inv_k * (&h + x * &r)) % &self.q;
     }
     (r, s)
   }
@@ -58,17 +61,33 @@ impl DSA {
     signature: &(BigUint, BigUint),
   ) -> bool {
     let (r, s) = signature;
-    if r.is_zero() || s.is_zero() || r > &self.q || s > &self.q {
+    if r.is_zero() || s.is_zero() || r >= &self.q || s >= &self.q {
       return false;
     }
-    let w = inv_mod(s, &self.q).unwrap();
-    let h = BigUint::from_bytes_be(&Sha1::hash(message));
-    let u1 = (&h * &w) % &self.q;
-    let u2 = (r * &w) % &self.q;
-    let v = mod_exp(&self.g, &u1, &self.p) * mod_exp(y, &u2, &self.p) % &self.q;
+    let w = inv_mod(s, &self.q).unwrap(); // w = s^-1 (mod q)
+    assert_eq!((s * &w) % &self.q, BigUint::one());
+    let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q;
+    let u1 = (&h * &w) % &self.q; // u1 = H(m) * w (mod q)
+    let u2 = (r * &w) % &self.q;  // u2 = r * w (mod q)
+    let v = { // v = g^u1 y^u2 (mod p) (mod q)
+      let a = mod_exp(&self.g, &u1, &self.p);
+      let b = mod_exp(y, &u2, &self.p);
+      ((a * b) % &self.p) % &self.q
+    };
     r.clone() == v
   }
 }
+
+/*
+  Correctness: Suppose r = (g^k mod p) mod q, s = k^-1 (H(m) + xr) (mod q) are correct. Then:
+    v = (g^u1 y^u2 mod p) mod q
+      = (g^u1 g^(x u2) mod p) mod q
+      = (g^(u1 + x u2) mod p) mod q
+      = (g^(H(m) * w + xrw) mod p) mod q (and exponent mod p - 1, and remember g is of order q | p - 1)
+      = (g^wks mod p) mod q
+      = (g^k mod p) mod q (since w = s^-1 mod q)
+      = r
+*/
 
 #[cfg(test)]
 mod tests {

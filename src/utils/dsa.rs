@@ -32,6 +32,10 @@ impl DSA {
     Self { p, q, g }
   }
 
+  pub fn get_params(&self) -> (BigUint, BigUint, BigUint) {
+    (self.p.clone(), self.q.clone(), self.g.clone())
+  }
+
   // Returns (x, y) = (secret_key, public_key)
   pub fn generate_keys(&self) -> (BigUint, BigUint) {
     let x = thread_rng().gen_biguint_range(&BigUint::from(2u8), &(&self.q - BigUint::one()));
@@ -68,8 +72,9 @@ impl DSA {
     assert_eq!((s * &w) % &self.q, BigUint::one());
     let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q;
     let u1 = (&h * &w) % &self.q; // u1 = H(m) * w (mod q)
-    let u2 = (r * &w) % &self.q;  // u2 = r * w (mod q)
-    let v = { // v = g^u1 y^u2 (mod p) (mod q)
+    let u2 = (r * &w) % &self.q; // u2 = r * w (mod q)
+    let v = {
+      // v = g^u1 y^u2 (mod p) (mod q)
       let a = mod_exp(&self.g, &u1, &self.p);
       let b = mod_exp(y, &u2, &self.p);
       ((a * b) % &self.p) % &self.q

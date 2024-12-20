@@ -15,8 +15,28 @@ pub struct DSA {
   pub g: BigUint,
 }
 
-impl DSA {
-  pub fn with_default_params() -> Self {
+pub trait SignatureAlgorithm {
+  type FieldElement;
+  fn with_default_params() -> Self;
+  fn get_params(&self) -> (Self::FieldElement, Self::FieldElement, Self::FieldElement);
+  fn generate_keys(&self) -> (Self::FieldElement, Self::FieldElement);
+  fn sign<S: AsRef<[u8]>>(
+    &self,
+    x: &Self::FieldElement,
+    message: &S,
+  ) -> (Self::FieldElement, Self::FieldElement);
+  fn verify<S: AsRef<[u8]>>(
+    &self,
+    y: &Self::FieldElement,
+    message: &S,
+    signature: &(Self::FieldElement, Self::FieldElement),
+  ) -> bool;
+}
+
+impl SignatureAlgorithm for DSA {
+  type FieldElement = BigUint;
+
+  fn with_default_params() -> Self {
     let p = BigUint::parse_bytes("800000000000000089e1855218a0e7dac38136ffafa72eda7859f2171e25e65eac698c1702578b07dc2a1076da241c76c62d374d8389ea5aeffd3226a0530cc565f3bf6b50929139ebeac04f48c3c84afb796d61e5a4f9a8fda812ab59494232c7d2b4deb50aa18ee9e132bfa85ac4374d7f9091abc3d015efc871a584471bb1".as_bytes(),
       16,
     )
@@ -32,18 +52,22 @@ impl DSA {
     Self { p, q, g }
   }
 
-  pub fn get_params(&self) -> (BigUint, BigUint, BigUint) {
+  fn get_params(&self) -> (Self::FieldElement, Self::FieldElement, Self::FieldElement) {
     (self.p.clone(), self.q.clone(), self.g.clone())
   }
 
   // Returns (x, y) = (secret_key, public_key)
-  pub fn generate_keys(&self) -> (BigUint, BigUint) {
+  fn generate_keys(&self) -> (Self::FieldElement, Self::FieldElement) {
     let x = thread_rng().gen_biguint_range(&BigUint::from(2u8), &(&self.q - BigUint::one()));
     let y = mod_exp(&self.g, &x, &self.p);
     (x, y)
   }
 
-  pub fn sign<S: AsRef<[u8]>>(&self, x: &BigUint, message: &S) -> (BigUint, BigUint) {
+  fn sign<S: AsRef<[u8]>>(
+    &self,
+    x: &Self::FieldElement,
+    message: &S,
+  ) -> (Self::FieldElement, Self::FieldElement) {
     let (mut r, mut s) = (BigUint::zero(), BigUint::zero());
     let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q;
     while r.is_zero() || s.is_zero() {
@@ -58,18 +82,17 @@ impl DSA {
     (r, s)
   }
 
-  pub fn verify<S: AsRef<[u8]>>(
+  fn verify<S: AsRef<[u8]>>(
     &self,
-    y: &BigUint,
+    y: &Self::FieldElement,
     message: &S,
-    signature: &(BigUint, BigUint),
+    signature: &(Self::FieldElement, Self::FieldElement),
   ) -> bool {
     let (r, s) = signature;
     if r.is_zero() || s.is_zero() || r >= &self.q || s >= &self.q {
       return false;
     }
     let w = inv_mod(s, &self.q).unwrap(); // w = s^-1 (mod q)
-    assert_eq!((s * &w) % &self.q, BigUint::one());
     let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q;
     let u1 = (&h * &w) % &self.q; // u1 = H(m) * w (mod q)
     let u2 = (r * &w) % &self.q; // u2 = r * w (mod q)

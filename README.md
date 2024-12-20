@@ -59,7 +59,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   - Implement unpadded message recovery oracle ✅
   - Bleichenbacher's e=3 RSA Attack ✅
   - DSA key recovery from nonce ✅
-  - DSA nonce recovery from repeated nonce ❌
+  - DSA nonce recovery from repeated nonce ✅
   - DSA parameter tampering ❌
   - RSA parity oracle ❌
   - Bleichenbacher's PKCS 1.5 Padding Oracle (Simple Case) ❌

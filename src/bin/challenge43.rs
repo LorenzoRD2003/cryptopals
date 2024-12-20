@@ -1,5 +1,5 @@
 use cryptopals::utils::{
-  algebra::modulo::{inv_mod, mod_exp}, conversion::hex_string::HexString, dsa::DSA, mac::sha1::Sha1,
+  algebra::modulo::{inv_mod, mod_exp}, conversion::hex_string::HexString, dsa::{SignatureAlgorithm, DSA}, mac::sha1::Sha1,
 };
 use num_bigint::BigUint;
 

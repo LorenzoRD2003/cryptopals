@@ -89,7 +89,7 @@ impl SignatureAlgorithm for DSA {
     signature: &(Self::FieldElement, Self::FieldElement),
   ) -> bool {
     let (r, s) = signature;
-    if r.is_zero() || s.is_zero() || r >= &self.q || s >= &self.q {
+    if s.is_zero() || r >= &self.q || s >= &self.q {
       return false;
     }
     let w = inv_mod(s, &self.q).unwrap(); // w = s^-1 (mod q)

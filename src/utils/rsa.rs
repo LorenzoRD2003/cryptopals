@@ -11,8 +11,8 @@ pub struct RSAKeys {
 pub struct RSA {}
 
 impl RSA {
-  const E: u8 = 3;
-  const BITS: u64 = 512;
+  const E: u64 = 65537;
+  const BITS: u64 = 1024;
   const ITERATIONS: u64 = 7;
   pub fn generate_keys() -> RSAKeys {
     loop {

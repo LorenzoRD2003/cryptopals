@@ -61,7 +61,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
   - DSA key recovery from nonce ✅
   - DSA nonce recovery from repeated nonce ✅
   - DSA parameter tampering ✅
-  - RSA parity oracle ❌
+  - RSA parity oracle  ✅
   - Bleichenbacher's PKCS 1.5 Padding Oracle (Simple Case) ❌
   - Bleichenbacher's PKCS 1.5 Padding Oracle (Complete Case) ❌
 

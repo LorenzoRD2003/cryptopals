@@ -3,6 +3,7 @@ use num_traits::One;
 
 use super::{algebra::{modulo::{inv_mod, mod_exp}, primes::generate_prime}, padding::{pkcs1_pad, pkcs1_unpad}};
 
+#[derive(Clone)]
 pub struct RSAKeys {
   pub sk: (BigUint, BigUint), // (d,n)
   pub pk: (BigUint, BigUint), // (e,n)

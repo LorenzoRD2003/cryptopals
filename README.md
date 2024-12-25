@@ -1,7 +1,8 @@
 # Cryptopals Challenges Solutions 😄
-All the work in this repository is done by me while studying cryptography and learning better practices in Rust. I also include additional things, as my implementations for AES, HexStrings and Hashes.
+All the work in this repository is done by me while studying cryptography and learning better practices in Rust. I also include additional things, as my implementations for AES, HexStrings, Hashes, DH, RSA and DSA.
 
 Some of the solutions to the challenges are tests in the files. Still in progress. I plan to complete it during my free time.
+NOTE: Completed all six original sets of problems. I plan to do both additional sets, but for now the project is **paused**.
 
 ## Progress: 73% 🚀🚀🚀
 

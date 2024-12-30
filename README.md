@@ -2,7 +2,6 @@
 All the work in this repository is done by me while studying cryptography and learning better practices in Rust. I also include additional things, as my implementations for AES, HexStrings, Hashes, DH, RSA and DSA.
 
 Some of the solutions to the challenges are tests in the files. Still in progress. I plan to complete it during my free time.
-NOTE: Completed all six original sets of problems. I plan to do both additional sets, but for now the project is **paused**.
 
 ## Progress: 73% 🚀🚀🚀
 
@@ -67,7 +66,7 @@ NOTE: Completed all six original sets of problems. I plan to do both additional 
   - Bleichenbacher's PKCS 1.5 Padding Oracle (Complete Case) ✅
 
 ### Set 7: Hashes 🚩
-  - CBC-MAC Message Forgery ❌
+  - CBC-MAC Message Forgery ✅
   - Hashing with CBC-MAC ❌
   - Compression Ratio Side-Channel Attacks ❌
   - Iterated Hash Function Multicollisions ❌

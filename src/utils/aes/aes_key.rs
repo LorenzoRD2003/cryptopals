@@ -11,6 +11,12 @@ pub enum AESKey {
   AES256Key([u8; AES256_KEY_SIZE]),
 }
 
+impl AsRef<[u8]> for AESKey {
+  fn as_ref(&self) -> &[u8] {
+    self.get_array()
+  }
+}
+
 impl AESKey {
   pub fn default_value() -> Self {
     Self::AES128Key([0; 16])

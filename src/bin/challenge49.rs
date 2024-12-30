@@ -166,5 +166,6 @@ fn main() {
   let iv2 = [0; 16];
   let (msg2, mac2) = victim.sign_part2(&server2, iv2, &vec![(third_id, low_amount)]);
   server2.verify_signature(&msg2, iv2, &mac2);
-  
+  // I also should add the PKCS padding scheme here. Q = 1:1000000
+  // The idea is to encrypt CBC-MAC(K, Q ^ mac2) = mac2' and use that as the mac for msg2 || Q
 }

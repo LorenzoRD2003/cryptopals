@@ -3,7 +3,7 @@ All the work in this repository is done by me while studying cryptography and le
 
 Some of the solutions to the challenges are tests in the files. Still in progress. I plan to complete it during my free time.
 
-## Progress: 76% 🚀🚀🚀
+## Progress: 77% 🚀🚀🚀
 
 ### Set 1: Basics ✅
   - Convert hex to base64 ✅
@@ -68,7 +68,7 @@ Some of the solutions to the challenges are tests in the files. Still in progres
 ### Set 7: Hashes 🚩
   - CBC-MAC Message Forgery ✅
   - Hashing with CBC-MAC ✅
-  - Compression Ratio Side-Channel Attacks ❌
+  - Compression Ratio Side-Channel Attacks ✅
   - Iterated Hash Function Multicollisions ❌
   - Kelsey and Schneier's Expandable Messages ❌
   - Kelsey and Kohno's Nostradamus Attack ❌

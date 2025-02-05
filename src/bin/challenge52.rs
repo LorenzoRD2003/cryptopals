@@ -7,6 +7,7 @@ use cryptopals::utils::aes::{
 use num::pow;
 use rand::{thread_rng, Rng};
 
+type HasherState = u16;
 type Collision = (Vec<u8>, Vec<u8>);
 
 struct Challenge52 {
@@ -20,21 +21,21 @@ impl Challenge52 {
     }
   }
 
-  fn md<S: AsRef<[u8]>>(&self, msg: &S, h: u32) -> u32 {
+  fn md<S: AsRef<[u8]>>(&self, msg: &S, h: HasherState) -> HasherState {
     let padded_msg = pkcs_padding(msg, 16);
     let mut h_ = h;
     for (_, &m) in padded_msg.iter().enumerate() {
-      let pt = [h.to_be_bytes().as_ref(), [m].as_ref()].concat();
+      let pt = [h_.to_be_bytes().as_ref(), [m].as_ref()].concat();
       let ct = AES::encode(&pt, &self.key, AESMode::ECB).unwrap();
-      h_ = u32::from_be_bytes([ct[0], ct[1], ct[2], ct[3]]);
+      h_ = u16::from_be_bytes([ct[0], ct[1]]);
     }
     h_
   }
 }
 
-fn find_collision(hasher: &Challenge52, h: u32) -> Collision {
-  let mut digests_set: HashSet<u32> = HashSet::new();
-  let mut digests_map: HashMap<Vec<u8>, u32> = HashMap::new();
+fn find_collision(hasher: &Challenge52, h: HasherState) -> Collision {
+  let mut digests_set: HashSet<HasherState> = HashSet::new();
+  let mut digests_map: HashMap<Vec<u8>, HasherState> = HashMap::new();
   let mut collision: bool = false;
   let mut collision_key1: Vec<u8> = vec![];
   let mut collision_key2: Vec<u8> = vec![];
@@ -60,7 +61,7 @@ fn find_collision(hasher: &Challenge52, h: u32) -> Collision {
 }
 
 // Find 2^n collisions. Since we have one collision, we can append whatever we want at the end
-fn find_exponential_collisions(hasher: &Challenge52, h: u32, n: u8) -> Vec<Collision> {
+fn find_exponential_collisions(hasher: &Challenge52, h: HasherState, n: u8) -> Vec<Collision> {
   assert!(n <= 32);
   let power = pow(2, n as usize);
   let mut result: Vec<Collision> = vec![];
@@ -78,7 +79,7 @@ fn find_exponential_collisions(hasher: &Challenge52, h: u32, n: u8) -> Vec<Colli
 fn main() {
   let hasher_f = Challenge52::new();
   let hasher_g = Challenge52::new();
-  let h = 0;
+  let h: HasherState = 0;
   let n = 14;
 
   let collisions: Vec<Collision> = find_exponential_collisions(&hasher_f, h, n);

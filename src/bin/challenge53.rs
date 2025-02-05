@@ -61,15 +61,11 @@ fn find_collision(
   let mut one_block_set: HashSet<HasherState> = HashSet::new();
   let mut one_block_map: HashMap<Vec<u8>, HasherState> = HashMap::new();
 
-  let mut j = 0;
-  let max_j = 1024;
-  while j < max_j {
+  for _ in 0..1024 {
     let (mi, hmi) = random_message_of_blocks(&hasher, rng, 1, initial_state);
-    dbg!(j);
     if !one_block_set.contains(&hmi) {
       one_block_set.insert(hmi);
       one_block_map.insert(mi, hmi);
-      j += 1;
     }
   }
 
@@ -79,10 +75,7 @@ fn find_collision(
   let (start_point, start_state) =
     random_message_of_blocks(&hasher, rng, block_amount, initial_state);
 
-  let mut a = 0;
   while !found_collision {
-    dbg!(a);
-    a += 1;
     let (mi_, hmi_) = random_message_of_blocks(&hasher, rng, 1, start_state);
     found_collision = one_block_set.contains(&hmi_);
     if found_collision {

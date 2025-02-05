@@ -1,8 +1,8 @@
-use cryptopals::utils::{aes::{
+use cryptopals::utils::aes::{
   aes::AES,
   aes_key::AESKey,
   utils::{pkcs_padding, AESMode},
-}, conversion::hex_string::HexString};
+};
 use num::pow;
 use rand::{rngs::ThreadRng, thread_rng, Rng};
 use std::collections::{HashMap, HashSet};
@@ -73,7 +73,7 @@ fn find_collision(
   let mut collision: Collision = (vec![], vec![]);
   let mut collision_state: HasherState = 0;
   let (start_point, start_state) =
-    random_message_of_blocks(&hasher, rng, block_amount, initial_state);
+    random_message_of_blocks(&hasher, rng, block_amount - 1, initial_state);
 
   while !found_collision {
     let (mi_, hmi_) = random_message_of_blocks(&hasher, rng, 1, start_state);
@@ -96,7 +96,7 @@ fn main() {
   let initial_state: HasherState = 0;
   let mut state: HasherState = initial_state;
   let mut rng = thread_rng();
-  let (x, hx) = random_message_of_blocks(&hasher, &mut rng, TWO_POW_K, state);
+  let (x, h_x) = random_message_of_blocks(&hasher, &mut rng, TWO_POW_K, state);
 
   // We want to find x' such that H(x') = H(x).
   // 1) Find k collisions.
@@ -104,18 +104,71 @@ fn main() {
   let mut msgs_2 = vec![];
   for i in 0..K {
     dbg!(i);
-    let (obtained_state, (a, b)) = find_collision(&hasher, &mut rng, state, pow(2, K - 1 - i));
+    let (obtained_state, (a, b)) = find_collision(&hasher, &mut rng, state, pow(2, K - 1 - i) + 1);
     msgs_1.push(a);
     msgs_2.push(b);
     state = obtained_state;
   }
+  dbg!(msgs_2[0].len());
   let z = state;
+
   // It is expected that every message conformed by elements of vectors hashes to z
-  let mut check_state = initial_state;
+  state = initial_state;
   for i in 0..K {
     let r: bool = thread_rng().gen();
     let chosen: &Vec<u8> = if r { &msgs_1[i] } else { &msgs_2[i] };
-    check_state = hasher.md(chosen, check_state);
+    state = hasher.md(chosen, state);
   }
-  assert_eq!(z, check_state);
+  assert_eq!(z, state);
+
+  // 2) Save all intermediate states
+  let mut intermediate_states_set: HashSet<HasherState> = HashSet::new();
+  let mut intermediate_states_map: HashMap<usize, HasherState> = HashMap::new();
+  state = initial_state;
+  for i in 0..TWO_POW_K {
+    let x_block: [u8; BLOCK_SIZE] = x[BLOCK_SIZE * i..BLOCK_SIZE * (i + 1)].try_into().unwrap();
+    state = hasher.md(&x_block, state);
+    intermediate_states_set.insert(state);
+    intermediate_states_map.insert(i, state);
+  }
+
+  // 3) Find block b such that H_z(b) belongs to the intermediate states
+  let mut found: Option<Vec<u8>> = None;
+  state = z;
+  while found.is_none() {
+    let (mi_, hmi_) = random_message_of_blocks(&hasher, &mut rng, 1, state);
+    if intermediate_states_set.contains(&hmi_) {
+      found = Some(mi_);
+      state = hmi_;
+    }
+  }
+  let block = &found.unwrap();
+
+  // 4) Get i from the block
+  let j = intermediate_states_map
+    .iter()
+    .find(|(_, &v)| v == state)
+    .map(|(k, _)| k.clone())
+    .unwrap();
+  assert!(j > K); // Precondition for the next part to work, happens w.h.p.
+
+  // 5) Construct a message of size j with msgs_1 and msgs_2 and extend to have the same image as x
+  let mut msg: Vec<u8> = vec![];
+  let v = j - K;
+  for i in 0..K {
+    let bit = (v >> (K - 1 - i)) & 1; // Get the i-th bit
+    println!("Bit {}: {}", i, bit);
+    if bit == 1 {
+      msg.extend_from_slice(&msgs_2[i]);
+    } else {
+      msg.extend_from_slice(&msgs_1[i]);
+    }
+  }
+  assert_eq!(hasher.md(&msg, initial_state), z);
+  msg.extend_from_slice(&block);
+  msg.extend_from_slice(&x[(j + 1) * BLOCK_SIZE..]);
+  assert_eq!(x.len(), msg.len());
+
+  let h_msg = hasher.md(&msg, initial_state);
+  assert_eq!(h_x, h_msg);
 }

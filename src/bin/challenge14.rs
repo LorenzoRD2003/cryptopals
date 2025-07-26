@@ -1,7 +1,7 @@
 use cryptopals::utils::aes::aes::AES;
 use cryptopals::utils::aes::aes_block::AESBlock;
 use cryptopals::utils::aes::aes_error::AESError;
-use cryptopals::utils::aes::constants::AES_BLOCK_SIZE;
+use cryptopals::utils::aes::constants::sizes::AES_BLOCK_SIZE;
 use cryptopals::utils::aes::utils::AESMode;
 use cryptopals::utils::conversion::conversion::base64_to_bytes_vector;
 use cryptopals::utils::conversion::hex_string::HexString;
@@ -23,7 +23,7 @@ fn get_pre_len(
   random_key: &[u8; 16],
 ) -> Result<(usize, usize, usize), AESError> {
   let controlled_input = ['a' as u8; 64];
-  let ciphertext_blocks = AESBlock::from_bytes_vector(ecb_encryption(
+  let ciphertext_blocks = AESBlock::from_bytes(ecb_encryption(
     &controlled_input.to_vec(),
     &random_key,
     &true_pre_bytes,
@@ -35,7 +35,7 @@ fn get_pre_len(
 
   let mut ciphertexts: Vec<Vec<AESBlock>> = vec![];
   for i in 0..32 {
-    ciphertexts.push(AESBlock::from_bytes_vector(ecb_encryption(
+    ciphertexts.push(AESBlock::from_bytes(ecb_encryption(
       &controlled_input[0..i].to_vec(),
       &random_key,
       &true_pre_bytes,

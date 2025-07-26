@@ -8,8 +8,7 @@ fn main() {
   let digest = Sha1::hash(message);
   let expected_digest = HexString::try_from("d2d0714f014a9784047eaeccf956520045c45265")
     .unwrap()
-    .as_vector_of_bytes()
-    .unwrap();
+    .as_vector_of_bytes();
   assert_eq!(digest.to_vec(), expected_digest);
   let h = BigUint::from_bytes_be(&digest);
 

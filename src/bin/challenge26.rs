@@ -1,7 +1,7 @@
 use cryptopals::utils::aes::{
   aes::AES,
   aes_error::AESError,
-  constants::AES_BLOCK_SIZE,
+  constants::sizes::AES_BLOCK_SIZE,
   utils::{pkcs_padding, AESMode},
 };
 use rand::{thread_rng, Rng};

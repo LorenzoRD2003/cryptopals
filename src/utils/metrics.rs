@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-
 use super::conversion::conversion::ConversionError;
 
 pub fn character_frequency<S: AsRef<str>>(str: S) -> HashMap<char, u32> {
@@ -43,12 +42,11 @@ pub fn hamming_distance<S: AsRef<[u8]>>(bytes1: S, bytes2: S) -> Result<usize, C
 
 pub fn smallest_feasible_keysizes<S: AsRef<[u8]>>(
   encrypted: S,
-  min_threshold: u8,
-  max_threshold: u8,
+  threshold: std::ops::RangeInclusive<usize>,
   amount: usize,
 ) -> Vec<(u8, f64)> {
   let mut result: Vec<(u8, f64)> = vec![];
-  for keysize in min_threshold as usize..=max_threshold as usize {
+  for keysize in threshold {
     let repetitions = 10;
     let mut total_normalized_distance: f64 = 0 as f64;
     for i in 0..repetitions {
@@ -119,7 +117,6 @@ mod tests {
       HexString::try_from("12784ab31871")
         .unwrap()
         .xor_against_byte(238) // ee
-        .unwrap()
     )
   }
 
@@ -146,7 +143,7 @@ mod tests {
   fn test_repeating_key_xor() {
     let hex = HexString::try_from(
       "0b3637272a2b2e63622c2e69692a23693a2a3c6324202d623d63343c2a26226324272765272a282b2f20430a652e2c652a3124333a653e2b2027630c692b20283165286326302e27282f"
-    ).unwrap().as_vector_of_bytes().unwrap();
+    ).unwrap().as_vector_of_bytes();
     assert_eq!(
       hex,
       repeating_key_xor(
@@ -168,7 +165,8 @@ mod tests {
   fn obtain_smallest_normalized_keysizes() {
     let base64_contents = fs::read_to_string("src/data/1-6.txt").expect("Failed to read the file");
     let contents = base64_to_bytes_vector(&base64_contents).expect("Failed to convert from base64");
-    let result = smallest_feasible_keysizes(contents, 2, 40, 3);
+    let threshold = (2 as usize)..=(40 as usize);
+    let result = smallest_feasible_keysizes(contents, threshold, 3);
     assert_eq!(result[0].0, 29);
     assert!(result[0].1 - (800 as f64) / (29 as f64) <= 1e-6);
   }
@@ -180,8 +178,7 @@ mod tests {
     let correct_answer =
       BinaryString::try_from("010000010111010000100000001000000111010001111001011100100111011001101110001000000100110101101110011011000111001101110011")
       .unwrap()
-      .as_vector_of_bytes()
-      .unwrap();
+      .as_vector_of_bytes();
     assert_eq!(grouped[0], correct_answer);
   }
 }

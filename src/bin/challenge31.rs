@@ -96,8 +96,7 @@ impl Server {
     let signature_str = params[2].to_string();
     let signature = HexString::try_from(signature_str)
       .map_err(|_| BadRequestError)?
-      .as_vector_of_bytes()
-      .map_err(|_| BadRequestError)?;
+      .as_vector_of_bytes();
     assert_eq!(signature.len(), 20);
     Ok(RequestParams {
       file,

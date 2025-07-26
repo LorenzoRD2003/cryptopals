@@ -25,7 +25,7 @@
   In fact, we can do it for every byte values of the ids (doing their xor) and we put that byte in the correct IV positions.
 */
 
-use cryptopals::utils::aes::{aes::AES, aes_key::AESKey, utils::AESMode};
+use cryptopals::utils::aes::{aes::AES, aes_key::AESKey, constants::sizes::AES128_KEY_SIZE, utils::AESMode};
 use regex::Regex;
 
 type MessageT = String;
@@ -79,7 +79,7 @@ struct ServerPart1 {
 
 impl Challenge49Server for ServerPart1 {
   fn new() -> Self {
-    let key = AESKey::random_key();
+    let key = AESKey::random_key(AES128_KEY_SIZE).unwrap();
     Self { key }
   }
 
@@ -119,7 +119,7 @@ struct ServerPart2 {
 impl Challenge49Server for ServerPart2 {
   fn new() -> Self {
     Self {
-      key: AESKey::random_key(),
+      key: AESKey::random_key(AES128_KEY_SIZE).unwrap(),
       iv: [0; 16],
     }
   }

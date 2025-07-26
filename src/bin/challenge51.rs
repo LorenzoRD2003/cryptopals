@@ -1,5 +1,7 @@
 use core::fmt;
-use cryptopals::utils::aes::{aes::AES, aes_error::AESError, aes_key::AESKey, utils::AESMode};
+use cryptopals::utils::aes::{
+  aes::AES, aes_error::AESError, aes_key::AESKey, constants::sizes::AES128_KEY_SIZE, utils::AESMode,
+};
 use flate2::{write::ZlibEncoder, Compression};
 use rand::{thread_rng, Rng};
 use std::{collections::HashMap, io::Write};
@@ -75,9 +77,9 @@ impl CompressionOracle {
     let compressed_request = self.compress_data(&formatted_request)?;
     let encoded = AES::encode(
       &compressed_request,
-      &AESKey::random_key(),
+      &AESKey::random_key(AES128_KEY_SIZE).unwrap(),
       //AESMode::CTR(thread_rng().gen()), // Stream cipher!
-      AESMode::CBC(thread_rng().gen()) // Block cipher!
+      AESMode::CBC(thread_rng().gen()), // Block cipher!
     )?;
     Ok(encoded.len())
   }
@@ -93,7 +95,7 @@ const BASE64_CHARS: [char; 63] = [
 fn get_possible_strings(
   oracle: &CompressionOracle,
   strings: &Vec<String>,
-  flag: bool
+  flag: bool,
 ) -> Result<Vec<String>, CompressionOracleError> {
   let mut sizes: HashMap<String, usize> = HashMap::new();
   for s in strings {
@@ -117,7 +119,8 @@ fn main() -> Result<(), CompressionOracleError> {
   let oracle = CompressionOracle::new();
   let mut possible_strings: Vec<String> = vec!["".to_string()];
   for i in 1..=44 {
-    possible_strings = get_possible_strings(&oracle, &possible_strings, possible_strings.len() < 10)?;
+    possible_strings =
+      get_possible_strings(&oracle, &possible_strings, possible_strings.len() < 10)?;
     //possible_strings = get_possible_strings(&oracle, &possible_strings, false)?;
     println!("Round {i} finished.");
   }

@@ -19,8 +19,7 @@ fn main() -> Result<(), AESError> {
   for (i, line) in reader.lines().enumerate() {
     let ciphertext = HexString::try_from(line.unwrap())
       .unwrap()
-      .as_vector_of_bytes()
-      .unwrap();
+      .as_vector_of_bytes();
 
     let blocks = AES::divide_in_blocks(&ciphertext)?;
     let mut frequency_map = HashMap::new();

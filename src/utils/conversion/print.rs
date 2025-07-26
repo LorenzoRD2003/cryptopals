@@ -5,7 +5,7 @@ use super::{conversion::ConversionError, hex_string::HexString};
 pub fn xor_against_all_bytes(hex: HexString, fraction_threshold: f64) -> Result<(), ConversionError> {
   for byte in 0u8..255 {
     let text = hex
-      .xor_against_byte(byte)?
+      .xor_against_byte(byte)
       .as_text()
       .unwrap_or_else(|_| String::from("\n"));
 
@@ -15,8 +15,8 @@ pub fn xor_against_all_bytes(hex: HexString, fraction_threshold: f64) -> Result<
     if common_chars_fraction(map, common_chars) >= fraction_threshold {
       println!(
         "{:} {:}",
-        HexString::try_from(vec![byte])?,
-        hex.xor_against_byte(byte)?.as_text()?
+        HexString::from(vec![byte]),
+        hex.xor_against_byte(byte).as_text()?
       )
     }
   }

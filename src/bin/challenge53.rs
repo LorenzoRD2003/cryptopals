@@ -1,7 +1,5 @@
 use cryptopals::utils::aes::{
-  aes::AES,
-  aes_key::AESKey,
-  utils::{pkcs_padding, AESMode},
+  aes::AES, aes_key::AESKey, constants::sizes::AES128_KEY_SIZE, utils::{pkcs_padding, AESMode}
 };
 use num::pow;
 use rand::{rngs::ThreadRng, thread_rng, Rng};
@@ -21,7 +19,7 @@ struct Challenge53 {
 impl Challenge53 {
   fn new() -> Self {
     Self {
-      key: AESKey::random_key(),
+      key: AESKey::random_key(AES128_KEY_SIZE).unwrap(),
     }
   }
 

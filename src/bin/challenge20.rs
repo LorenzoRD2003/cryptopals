@@ -4,7 +4,7 @@ use std::{
 };
 
 use cryptopals::utils::{
-  aes::{aes::AES, aes_error::AESError, constants::AES128_KEY_SIZE, utils::AESMode},
+  aes::{aes::AES, aes_error::AESError, constants::sizes::AES128_KEY_SIZE, utils::AESMode},
   conversion::{conversion::{base64_to_bytes_vector, repeating_key_xor}, hex_string::HexString}, metrics::{group_bytes_by_position, xor_against_all_bytes_and_find_best},
 };
 use rand::{thread_rng, Rng};

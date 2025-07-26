@@ -1,4 +1,7 @@
-use super::{aes_error::AESError, constants::*};
+use super::{
+  aes_error::AESError,
+  constants::tables::{ROUND_CONSTANTS, S_BOX},
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AESMode {
@@ -69,6 +72,7 @@ pub fn has_valid_pkcs_padding<S: AsRef<[u8]>>(bytes: &S, block_size: u8) -> Resu
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::utils::aes::constants::sizes::AES_BLOCK_SIZE;
 
   #[test]
   fn test_aes_word_modifier() {

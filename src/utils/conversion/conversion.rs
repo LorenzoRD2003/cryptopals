@@ -45,7 +45,7 @@ impl From<FromUtf8Error> for ConversionError {
   }
 }
 
-pub fn hex_char_to_binary(c: char) -> Result  <String, ConversionError> {
+pub fn hex_char_to_binary(c: char) -> Result<String, ConversionError> {
   match c {
     '0' => Ok(String::from("0000")),
     '1' => Ok(String::from("0001")),
@@ -68,7 +68,7 @@ pub fn hex_char_to_binary(c: char) -> Result  <String, ConversionError> {
   }
 }
 
-pub fn bytes_vector_to_base64(bytes: Vec<u8>) -> Result<String, ConversionError> {
+pub fn bytes_vector_to_base64(bytes: Vec<u8>) -> String {
   const BASE64_TABLE: &[u8; 64] =
     b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
   let mut result = String::from("");
@@ -86,18 +86,16 @@ pub fn bytes_vector_to_base64(bytes: Vec<u8>) -> Result<String, ConversionError>
     result.push(BASE64_TABLE[(combined & 0x3f) as usize] as char); // bits 18..23
   }
   let length: usize = bytes.len();
-  if length % 3 == 1 {
-    // Replace last two characters by ==
+  if length % 3 == 1 { // Replace last two characters by ==
     result.pop();
     result.pop();
     result.push('=');
     result.push('=');
-  } else if length % 3 == 2 {
-    // Replace last character by =
+  } else if length % 3 == 2 { // Replace last character by =
     result.pop();
     result.push('=');
   }
-  Ok(result)
+  result
 }
 
 pub fn base64_to_bytes_vector<S: AsRef<str>>(base64_str: S) -> Result<Vec<u8>, ConversionError> {
@@ -127,10 +125,6 @@ pub fn base64_to_bytes_vector<S: AsRef<str>>(base64_str: S) -> Result<Vec<u8>, C
       bytes.push((buffer >> bits_collected) as u8);
     }
   }
-  //if bits_collected > 0 {
-  //  return Err(ConversionError::InvalidBase64InputLength);
-  //}
-
   Ok(bytes)
 }
 
@@ -191,7 +185,6 @@ use crate::utils::conversion::{binary_string::BinaryString, conversion::{bytes_v
       HexString::try_from("534")
         .unwrap()
         .as_binary_string()
-        .unwrap()
     );
   }
 
@@ -200,8 +193,7 @@ use crate::utils::conversion::{binary_string::BinaryString, conversion::{bytes_v
   fn invalid_hex_string_to_binary_string() {
     HexString::try_from("51ab7x9")
       .unwrap()
-      .as_binary_string()
-      .unwrap();
+      .as_binary_string();
   }
 
   #[test]
@@ -211,7 +203,6 @@ use crate::utils::conversion::{binary_string::BinaryString, conversion::{bytes_v
       HexString::try_from("0x534")
         .unwrap()
         .as_binary_string()
-        .unwrap()
     );
   }
 
@@ -222,7 +213,6 @@ use crate::utils::conversion::{binary_string::BinaryString, conversion::{bytes_v
       BinaryString::try_from("0000010100110100")
         .unwrap()
         .as_vector_of_bytes()
-        .unwrap()
     );
   }
 
@@ -246,7 +236,7 @@ use crate::utils::conversion::{binary_string::BinaryString, conversion::{bytes_v
   fn test_bytes_vector_to_base64() {
     assert_eq!(
       "SE9MQVFVRVRBTA==",
-      bytes_vector_to_base64(Vec::from([72, 79, 76, 65, 81, 85, 69, 84, 65, 76])).unwrap() // "HOLAQUETAL"
+      bytes_vector_to_base64(Vec::from([72, 79, 76, 65, 81, 85, 69, 84, 65, 76])) // "HOLAQUETAL"
     );
   }
 
@@ -255,8 +245,7 @@ use crate::utils::conversion::{binary_string::BinaryString, conversion::{bytes_v
     assert_eq!(
       HexString::try_from("49276d206b696c6c696e6720796f757220627261696e206c696b65206120706f69736f6e6f7573206d757368726f6f6d")
         .unwrap()
-        .as_base64()
-        .unwrap(),
+        .as_base64(),
       "SSdtIGtpbGxpbmcgeW91ciBicmFpbiBsaWtlIGEgcG9pc29ub3VzIG11c2hyb29t"
     )
   }

@@ -1,8 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use cryptopals::utils::aes::{
-  aes::AES,
-  aes_key::AESKey,
-  utils::{pkcs_padding, AESMode},
+  aes::AES, aes_key::AESKey, constants::sizes::AES128_KEY_SIZE, utils::{pkcs_padding, AESMode}
 };
 use num::pow;
 use rand::{thread_rng, Rng};
@@ -17,7 +15,7 @@ struct Challenge52 {
 impl Challenge52 {
   fn new() -> Self {
     Self {
-      key: AESKey::random_key(),
+      key: AESKey::random_key(AES128_KEY_SIZE).unwrap(),
     }
   }
 

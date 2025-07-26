@@ -1,7 +1,7 @@
 use cryptopals::utils::aes::{
   aes::AES,
   aes_error::AESError,
-  constants::AES_BLOCK_SIZE,
+  constants::sizes::AES_BLOCK_SIZE,
   utils::{has_valid_pkcs_padding, pkcs_padding, AESMode},
 };
 use rand::{thread_rng, Rng};
@@ -98,7 +98,7 @@ fn check_every_possible_byte(
       return Ok(b);
     }
   }
-  Err(AESError::UnexpectedError)
+  Err(AESError::UnexpectedError("Unexpected error".into()))
 }
 
 fn single_block_poa(block: &[u8; 16], oracle: &PaddingOracle) -> Result<[u8; 16], AESError> {

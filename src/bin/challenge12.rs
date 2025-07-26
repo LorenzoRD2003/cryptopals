@@ -1,4 +1,4 @@
-use cryptopals::utils::aes::constants::AES_BLOCK_SIZE;
+use cryptopals::utils::aes::constants::sizes::AES_BLOCK_SIZE;
 use cryptopals::utils::aes::utils::AESMode;
 use cryptopals::utils::conversion::conversion::base64_to_bytes_vector;
 use cryptopals::utils::conversion::hex_string::HexString;

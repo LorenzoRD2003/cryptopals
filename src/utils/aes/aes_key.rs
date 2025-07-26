@@ -1,10 +1,10 @@
 use core::fmt;
 use rand::Rng;
 
+use super::{aes_error::AESError, constants::sizes::*};
 use crate::utils::conversion::hex_string::HexString;
-use super::{aes_block::AESBlock, aes_error::AESError, constants::*};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum AESKey {
   AES128Key([u8; AES128_KEY_SIZE]),
   AES192Key([u8; AES192_KEY_SIZE]),
@@ -17,28 +17,40 @@ impl AsRef<[u8]> for AESKey {
   }
 }
 
-impl AESKey {
-  pub fn default_value() -> Self {
-    Self::AES128Key([0; 16])
+impl TryFrom<&[u8]> for AESKey {
+  type Error = AESError;
+  fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+    let bytes = value.as_ref();
+    let length = bytes.len();
+    match length {
+      AES128_KEY_SIZE => Ok(Self::AES128Key(bytes.try_into().unwrap())),
+      AES192_KEY_SIZE => Ok(Self::AES192Key(bytes.try_into().unwrap())),
+      AES256_KEY_SIZE => Ok(Self::AES256Key(bytes.try_into().unwrap())),
+      _ => Err(AESError::InvalidKeySize(length)),
+    }
   }
+}
 
-  pub fn from_bytes<S: AsRef<[u8]>>(key_bytes: &S) -> Result<Self, AESError> {
-    let length = key_bytes.as_ref().len();
-    match key_bytes.as_ref().len() {
-      AES128_KEY_SIZE => Ok(Self::AES128Key(key_bytes.as_ref().try_into().unwrap())),
-      AES192_KEY_SIZE => Ok(Self::AES192Key(key_bytes.as_ref().try_into().unwrap())),
-      AES256_KEY_SIZE => Ok(Self::AES256Key(key_bytes.as_ref().try_into().unwrap())),
-      _ => Err(AESError::InvalidKeySize(length))
+impl AESKey {
+  pub fn default_value(size: usize) -> Result<Self, AESError> {
+    match size {
+      AES128_KEY_SIZE => Ok(Self::AES128Key([0; AES128_KEY_SIZE])),
+      AES192_KEY_SIZE => Ok(Self::AES192Key([0; AES192_KEY_SIZE])),
+      AES256_KEY_SIZE => Ok(Self::AES256Key([0; AES256_KEY_SIZE])),
+      _ => Err(AESError::InvalidKeySize(size)),
     }
   }
 
-  pub fn from_words(words: [(u8, u8, u8, u8); 4]) -> Self {
-    let arr: Vec<u8> = words
-      .map(|w| [w.0, w.1, w.2, w.3])
-      .iter()
-      .flat_map(|&arr| arr)
-      .collect();
-    Self::AES128Key(arr.try_into().unwrap())
+  pub fn from_bytes<S: AsRef<[u8]>>(key_bytes: &S) -> Result<Self, AESError> {
+    Self::try_from(key_bytes.as_ref())
+  }
+
+  pub fn from_words(words: Vec<(u8, u8, u8, u8)>) -> Self {
+    let mut bytes = Vec::with_capacity(words.len() * 4);
+    for (a, b, c, d) in words {
+      bytes.extend_from_slice(&[a, b, c, d]);
+    }
+    Self::from_bytes(&bytes).unwrap()
   }
 
   pub fn as_hex_string(&self) -> HexString {
@@ -61,29 +73,33 @@ impl AESKey {
     }
   }
 
-  pub fn as_block(&self) -> AESBlock {
+  pub fn to_owned_array(&self) -> Vec<u8> {
+    self.get_array().to_vec()
+  }
+
+  pub fn key_type(&self) -> &'static str {
     match self {
-      Self::AES128Key(arr) => AESBlock::from_flat_array(arr),
-      Self::AES192Key(_) => unimplemented!(),
-      Self::AES256Key(_) => unimplemented!(),
+      Self::AES128Key(_) => "AES-128",
+      Self::AES192Key(_) => "AES-192",
+      Self::AES256Key(_) => "AES-256",
     }
   }
 
-  pub fn divide_in_words(&self) -> [(u8, u8, u8, u8); 4] {
-    match self {
-      Self::AES128Key(arr) => [
-        (arr[0], arr[1], arr[2], arr[3]),
-        (arr[4], arr[5], arr[6], arr[7]),
-        (arr[8], arr[9], arr[10], arr[11]),
-        (arr[12], arr[13], arr[14], arr[15]),
-      ],
-      Self::AES192Key(_) => unimplemented!(),
-      Self::AES256Key(_) => unimplemented!(),
-    }
+  pub fn divide_in_words(&self) -> Vec<(u8, u8, u8, u8)> {
+    self
+      .get_array()
+      .chunks(4)
+      .map(|chunk| (chunk[0], chunk[1], chunk[2], chunk[3]))
+      .collect()
   }
 
-  pub fn random_key() -> Self {
-    Self::AES128Key(rand::thread_rng().gen())
+  pub fn random_key(size: usize) -> Result<AESKey, AESError> {
+    match size {
+      AES128_KEY_SIZE => Ok(Self::AES128Key(rand::thread_rng().gen())),
+      AES192_KEY_SIZE => Ok(Self::AES192Key(rand::thread_rng().gen())),
+      AES256_KEY_SIZE => Ok(Self::AES256Key(rand::thread_rng().gen())),
+      _ => Err(AESError::InvalidKeySize(size)),
+    }
   }
 }
 

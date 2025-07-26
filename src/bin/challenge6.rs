@@ -14,9 +14,10 @@ fn main() -> Result<(), ConversionError> {
     .collect();
   let contents = base64_to_bytes_vector(&base64_contents).expect("Failed to convert from base64");
 
-  let (min_keysize, max_keysize, keysizes_amount) = (2, 40, 1);
+  let keysize_threshold = (2 as usize)..=(40 as usize);
+  let keysizes_amount = 1;
   let feasible_keysizes =
-    smallest_feasible_keysizes(&contents, min_keysize, max_keysize, keysizes_amount);
+    smallest_feasible_keysizes(&contents, keysize_threshold, keysizes_amount);
 
   for (keysize, distance) in feasible_keysizes {
     println!("Keysize: {}, Distance: {}", keysize, distance);

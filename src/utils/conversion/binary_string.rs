@@ -15,7 +15,7 @@ impl fmt::Display for BinaryString {
 
 impl TryFrom<String> for BinaryString {
   type Error = ConversionError;
-  fn try_from(str: String) -> Result<Self, ConversionError> {
+  fn try_from(str: String) -> Result<Self, Self::Error> {
     let binary_str = Self { string: str };
     binary_str.validate()?;
     Ok(binary_str)
@@ -24,19 +24,18 @@ impl TryFrom<String> for BinaryString {
 
 impl TryFrom<&str> for BinaryString {
   type Error = ConversionError;
-  fn try_from(str: &str) -> Result<Self, ConversionError> {
+  fn try_from(str: &str) -> Result<Self, Self::Error> {
     Self::try_from(String::from(str))
   }
 }
 
-impl TryFrom<Vec<u8>> for BinaryString {
-  type Error = ConversionError;
-  fn try_from(vec: Vec<u8>) -> Result<Self, ConversionError> {
+impl From<Vec<u8>> for BinaryString {
+  fn from(vec: Vec<u8>) -> Self {
     let formatted: String = vec
       .iter()
       .map(|byte| format!("{:08b}", byte))
       .collect();
-    Self::try_from(formatted)
+    Self::try_from(formatted).unwrap()
   }
 }
 
@@ -63,7 +62,7 @@ impl BinaryString {
     Ok(())
   }
 
-  pub fn as_vector_of_bytes(&self) -> Result<Vec<u8>, ConversionError> {
+  pub fn as_vector_of_bytes(&self) -> Vec<u8> {
     let mut bytes: Vec<u8> = Vec::new();
     let mut byte: u8 = 0;
     for (i, c) in self.as_ref().chars().enumerate() {
@@ -73,30 +72,31 @@ impl BinaryString {
         byte = 0;
       }
     }
-    Ok(bytes)
+    bytes
   }
 
-  pub fn as_hex_string(&self) -> Result<HexString, ConversionError> {
-    let bytes_vector = self.as_vector_of_bytes()?;
-    HexString::try_from(hex::encode(bytes_vector)) // Use this since it this function is not part of the exercise
+  pub fn as_hex_string(&self) -> HexString {
+    HexString::try_from(
+      hex::encode(self.as_vector_of_bytes())
+    ).unwrap()
   }
 
-  pub fn as_base64(&self) -> Result<String, ConversionError> {
-    bytes_vector_to_base64(self.as_vector_of_bytes()?)
+  pub fn as_base64(&self) -> String {
+    bytes_vector_to_base64(self.as_vector_of_bytes())
   }
 
   pub fn xor_with(&self, binary: Self) -> Result<Self, ConversionError> {
-    let (bytes1, bytes2) = (self.as_vector_of_bytes()?, binary.as_vector_of_bytes()?);
-    Self::try_from(xor_bytes_vectors(bytes1, bytes2)?)
+    let (bytes1, bytes2) = (self.as_vector_of_bytes(), binary.as_vector_of_bytes());
+    let obtained_bytes = xor_bytes_vectors(bytes1, bytes2)?;
+    Ok(obtained_bytes.into())
   }
 
-  pub fn xor_with_byte(&self, byte: u8) -> Result<Self, ConversionError> {
-    let result: Vec<u8> = self.as_vector_of_bytes()?.iter().map(|&a| a ^ byte).collect();
-    Self::try_from(result)
+  pub fn xor_with_byte(&self, byte: u8) -> Self {
+    let result: Vec<u8> = self.as_vector_of_bytes().iter().map(|&a| a ^ byte).collect();
+    result.into()
   }
 
   pub fn as_text(&self) -> Result<String, ConversionError> {
-    let bytes = self.as_vector_of_bytes()?;
-    Ok(String::from_utf8(bytes)?)
+    Ok(String::from_utf8(self.as_vector_of_bytes())?)
   }
 }

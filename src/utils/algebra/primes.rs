@@ -18,7 +18,7 @@ pub fn get_nist_prime() -> BigUint {
   ",
   )
   .unwrap();
-  BigUint::from_be_bytes(hex.as_vector_of_bytes().unwrap().as_ref())
+  BigUint::from_be_bytes(hex.as_vector_of_bytes().as_ref())
 }
 
 pub fn miller_rabin_test(n: &BigUint, k: u64) -> bool {

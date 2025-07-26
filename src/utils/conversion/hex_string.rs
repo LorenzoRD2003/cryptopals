@@ -17,7 +17,7 @@ impl fmt::Display for HexString {
 
 impl TryFrom<String> for HexString {
   type Error = ConversionError;
-  fn try_from(str: String) -> Result<Self, ConversionError> {
+  fn try_from(str: String) -> Result<Self, Self::Error> {
     let final_str = if str.starts_with("0x") {
       String::from(&str[2..])
     } else {
@@ -31,19 +31,14 @@ impl TryFrom<String> for HexString {
 
 impl TryFrom<&str> for HexString {
   type Error = ConversionError;
-  fn try_from(str: &str) -> Result<Self, ConversionError> {
+  fn try_from(str: &str) -> Result<Self, Self::Error> {
     Self::try_from(String::from(str))
   }
 }
 
-impl TryFrom<Vec<u8>> for HexString {
-  type Error = ConversionError;
-  fn try_from(vec: Vec<u8>) -> Result<Self, ConversionError> {
-    let formatted: String = vec
-      .iter()
-      .map(|byte| format!("{:08b}", byte))
-      .collect();
-    BinaryString::try_from(formatted)?.as_hex_string()
+impl From<Vec<u8>> for HexString {
+  fn from(vec: Vec<u8>) -> Self {
+    BinaryString::from(vec).as_hex_string()
   }
 }
 
@@ -68,36 +63,36 @@ impl HexString {
     Ok(())
   }
 
-  pub fn as_binary_string(&self) -> Result<BinaryString, ConversionError> {
+  pub fn as_binary_string(&self) -> BinaryString {
     let partial_result: Result<Vec<String>, ConversionError> =
       self.as_ref().chars().map(hex_char_to_binary).collect();
-    let result: String = partial_result?.join("");
+    let result: String = partial_result.unwrap().join("");
     if (self.as_ref().len() & 1) == 0 {
-      BinaryString::try_from(result)
+      BinaryString::try_from(result).unwrap()
     } else {
-      BinaryString::try_from(String::from("0000") + &result)
+      BinaryString::try_from(String::from("0000") + &result).unwrap()
     }
   }
 
-  pub fn as_vector_of_bytes(&self) -> Result<Vec<u8>, ConversionError> {
-    self.as_binary_string()?.as_vector_of_bytes()
+  pub fn as_vector_of_bytes(&self) -> Vec<u8> {
+    self.as_binary_string().as_vector_of_bytes()
   }
 
-  pub fn as_base64(&self) -> Result<String, ConversionError> {
-    self.as_binary_string()?.as_base64()
+  pub fn as_base64(&self) -> String {
+    self.as_binary_string().as_base64()
   }
 
   pub fn xor_with(&self, hex: Self) -> Result<Self, ConversionError> {
-    let (bytes1, bytes2) = (self.as_vector_of_bytes()?, hex.as_vector_of_bytes()?);
-    Self::try_from(xor_bytes_vectors(bytes1, bytes2)?)
+    let (bytes1, bytes2) = (self.as_vector_of_bytes(), hex.as_vector_of_bytes());
+    Ok(Self::from(xor_bytes_vectors(bytes1, bytes2)?))
   }
 
-  pub fn xor_against_byte(&self, byte: u8) -> Result<Self, ConversionError> {
-    let result: Vec<u8> = self.as_vector_of_bytes()?.iter().map(|&a| a ^ byte).collect();
-    Self::try_from(result)
+  pub fn xor_against_byte(&self, byte: u8) -> Self {
+    let result: Vec<u8> = self.as_vector_of_bytes().iter().map(|&a| a ^ byte).collect();
+    Self::from(result)
   }
 
   pub fn as_text(&self) -> Result<String, ConversionError> {
-    self.as_binary_string()?.as_text()
+    self.as_binary_string().as_text()
   }
 }

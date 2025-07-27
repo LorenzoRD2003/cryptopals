@@ -1,7 +1,4 @@
-use cryptopals::utils::aes::{
-  aes::AES,
-  aes_error::AESError, utils::AESMode,
-};
+use cryptopals::utils::aes::{aes::AES, aes_error::AESError, utils::AESMode};
 use rand::Rng;
 
 fn convert_to_json_string(data: String) -> String {
@@ -40,22 +37,14 @@ fn profile_for(email: String) -> String {
 }
 
 fn encrypt_user_profile(email: String, key_bytes: &[u8; 16]) -> Result<Vec<u8>, AESError> {
-  AES::encode(
-    &profile_for(email),
-    key_bytes,
-    AESMode::ECB
-  )
+  AES::encode(&profile_for(email), key_bytes, AESMode::ECB)
 }
 
 fn decrypt_user_profile(
   encoded_profile: Vec<u8>,
   key_bytes: &[u8; 16],
 ) -> Result<String, AESError> {
-  let decoded_bytes = AES::decode(
-    &encoded_profile,
-    key_bytes,
-    AESMode::ECB
-  )?;
+  let decoded_bytes = AES::decode(&encoded_profile, key_bytes, AESMode::ECB)?;
   let decoded_string = String::from_utf8(decoded_bytes).unwrap();
   Ok(convert_to_json_string(decoded_string))
 }
@@ -83,14 +72,14 @@ fn main() -> Result<(), AESError> {
   let mut c: Vec<u8> = vec![];
 
   let first_cipher = encrypt_user_profile(String::from("lorenzo@rd.me"), &random_key)?;
-  c.extend(first_cipher[..32].to_vec());
+  c.extend(first_cipher[..32].to_vec()); // c1c2 = E(k, email=lorenzo@rd.me&uid=12&role=)
 
   let second_cipher = encrypt_user_profile(String::from("abcdefghijadmin"), &random_key)?;
-  c.extend(second_cipher[16..32].to_vec());
+  c.extend(second_cipher[16..32].to_vec()); // c3 = E(k, "admin&uid=13&rol")
 
   let third_cipher = encrypt_user_profile(String::from("lorenzo@bar.me"), &random_key)?;
-  c.extend(third_cipher[32..48].to_vec());
+  c.extend(third_cipher[32..48].to_vec()); // c4 = E(k, "=user\0x11\0x11\0x11\0x11\0x11\0x11\0x11\0x11\0x11\0x11\0x11)
 
-  println!("{}", decrypt_user_profile(c, &random_key)?);
+  println!("{}", decrypt_user_profile(c, &random_key)?); // D(k, c) = D(k, c1c2c3c4)
   Ok(())
 }

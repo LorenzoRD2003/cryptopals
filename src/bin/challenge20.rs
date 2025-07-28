@@ -5,7 +5,11 @@ use std::{
 
 use cryptopals::utils::{
   aes::{aes::AES, aes_error::AESError, constants::sizes::AES128_KEY_SIZE, utils::AESMode},
-  conversion::{conversion::{base64_to_bytes_vector, repeating_key_xor}, hex_string::HexString}, metrics::{group_bytes_by_position, xor_against_all_bytes_and_find_best},
+  conversion::{
+    conversion::{base64_to_bytes_vector, repeating_key_xor},
+    hex_string::HexString,
+  },
+  metrics::{group_bytes_by_position, xor_against_all_bytes_and_find_best},
 };
 use rand::{thread_rng, Rng};
 
@@ -38,7 +42,8 @@ fn main() -> Result<(), AESError> {
   }
   let bytes_result = repeating_key_xor(&conc_ciphertext, &final_key);
   println!(
-    "Final key: {}, \n Result: {} ",
+    "minimum length: {}\nFinal key: {}\n Result: {}",
+    min_len,
     HexString::try_from(final_key).unwrap(),
     String::from_utf8_lossy(&bytes_result)
   );

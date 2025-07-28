@@ -4,11 +4,11 @@ use cryptopals::utils::aes::{
   constants::sizes::AES_BLOCK_SIZE,
   utils::{has_valid_pkcs_padding, pkcs_padding, AESMode},
 };
-use rand::{thread_rng, Rng};
+use rand::{rngs::ThreadRng, thread_rng, Rng};
 
 /*
-  C = Enc(k, P xor IV)
-  P = Dec(k, C) xor IV
+  C = Enc(k, P ^ IV)
+  P = Dec(k, C) ^ IV
   Sabemos C y sabemos IV. Pero para decriptar necesitariamos k y no lo tenemos
 
   Idea de ataque: Modificar IV para modificar predeciblemente el P obtenido
@@ -17,23 +17,22 @@ use rand::{thread_rng, Rng};
   O sea hacer que el ultimo byte de P sea 0x01.
 
   Considerando solo el ultimo byte
-  p0 = Dec(k, C)[0] xor IV
-  Si quiero que del otro lado haya un 0x01
-  Busco byte b0 tal que p0 xor b0 = 0x01
-  Entonces seria IV → (IV xor b0)
-  0x01 = Dec(k, C)[0] xor (IV xor b0)
-  Y b0 es un byte, podemos probar los 256 bytes.
+  p0 = Dec(k, C)[0] ^ IV
+  Si queremos que del otro lado haya un 0x01, buscamos byte b0 tal que p0 ^ b0 = 0x01
+  Entonces seria IV → (IV ^ b0). Aplicando ^b0 a ambos lados queda
+  0x01 = p0 ^ b0 = Dec(k, C)[0] ^ (IV ^ b0)
+  b0 es un byte, luego podemos probar los 256 bytes.
   ¿Por qué hace falta probar los 256 bytes? Porque en ninguna query al oraculo vamos a poder
   ver cuál es el P obtenido, solamente veremos si tiene padding valido.
 
-  Cuando hallemos b0, sabemos que usar b0' = b0 xor 0x01 convierte el último byte de P en 0,
+  Cuando hallemos b0, sabemos que usar b0' = b0 ^ 0x01 convierte el último byte de P en 0,
   y b0' nos va a servir para tener más control sobre la salida del plaintext.
-  Porque despues queremos que al final sea 0x02, 0x03, 0x04, etc.
+  Porque despues queremos que al final sea 0x02, 0x03, 0x04, etc. en mas de un byte
 
   Potencial problema: Caso borde si el penultimo byte p1 de P es 0x02. En ese caso habra un
   padding valido tanto cuando logremos que el ultimo byte sea 0x01 como 0x02, y si encontramos
   el que da 0x02 primero, el ataque no va a funcionar.
-  Este problema se soluciona haciendo xor del penultimo byte del IV cuando hallemos un padding valido,
+  Este problema se soluciona haciendo XOR del penultimo byte del IV cuando hallemos un padding valido,
   con cualquier valor != 0 y volviendo a testear padding valido.
 
   Seguir haciendo esto hasta terminar con todo el bloque.
@@ -54,22 +53,24 @@ const STRINGS: [&[u8]; 10] = [
 ];
 
 struct PaddingOracle {
+  rng: ThreadRng,
   key: [u8; 16],
-  encr_iv: [u8; 16],
+  iv: [u8; 16],
 }
 
 impl PaddingOracle {
   fn new() -> Self {
-    let key: [u8; 16] = thread_rng().gen();
-    let iv: [u8; 16] = rand::thread_rng().gen();
-    PaddingOracle { key, encr_iv: iv }
+    let mut rng = thread_rng();
+    let key: [u8; 16] = rng.gen();
+    let iv: [u8; 16] = rng.gen();
+    PaddingOracle { rng, key, iv }
   }
 
-  fn select_random_and_encrypt(&self) -> Result<(Vec<u8>, [u8; 16]), AESError> {
-    let random_index: usize = thread_rng().gen_range(0..10);
+  fn select_random_and_encrypt(&mut self) -> Result<(Vec<u8>, [u8; 16]), AESError> {
+    let random_index: usize = self.rng.gen_range(0..10);
     let plaintext = pkcs_padding(&STRINGS[random_index], AES_BLOCK_SIZE as u8);
-    let ciphertext = AES::encode(&plaintext, &self.key, AESMode::CBC(self.encr_iv))?;
-    Ok((ciphertext, self.encr_iv))
+    let ciphertext = AES::encode(&plaintext, &self.key, AESMode::CBC(self.iv))?;
+    Ok((ciphertext, self.iv))
   }
 
   fn check_padding<S: AsRef<[u8]>>(&self, ciphertext: &S, iv: &[u8; 16]) -> Result<bool, AESError> {
@@ -103,7 +104,7 @@ fn check_every_possible_byte(
 
 fn single_block_poa(block: &[u8; 16], oracle: &PaddingOracle) -> Result<[u8; 16], AESError> {
   let mut zeroing_iv = [0u8; BLOCK_SIZE]; // Read explanation
-                                          // padding value will be 0x01 in the first iteration, 0x02 in the second, and so on.
+  // padding value will be 0x01 in the first iteration, 0x02 in the second, and so on.
   for padding_value in 1..=BLOCK_SIZE as u8 {
     let mut padding_iv: [u8; 16] = zeroing_iv.map(|b| padding_value ^ b);
     let b = check_every_possible_byte(block, &oracle, &mut padding_iv, padding_value)?;
@@ -113,10 +114,8 @@ fn single_block_poa(block: &[u8; 16], oracle: &PaddingOracle) -> Result<[u8; 16]
 }
 
 fn main() -> Result<(), AESError> {
-  let oracle: PaddingOracle = PaddingOracle::new();
+  let mut oracle: PaddingOracle = PaddingOracle::new();
   let (ciphertext, mut iv) = oracle.select_random_and_encrypt()?;
-  assert_eq!(ciphertext.len() % BLOCK_SIZE, 0);
-  assert_eq!(iv.len() % BLOCK_SIZE, 0);
 
   let mut plaintext: Vec<u8> = vec![];
   let cipherblocks: Vec<[u8; 16]> = ciphertext
@@ -139,6 +138,6 @@ fn main() -> Result<(), AESError> {
     iv = cipherblock;
   }
   dbg!(&plaintext, String::from_utf8(plaintext.clone()).unwrap());
-
+  
   Ok(())
 }

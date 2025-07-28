@@ -4,40 +4,57 @@ pub type Sha1Block = [u8; SHA1_BLOCK_SIZE];
 
 pub struct Sha1 {
   h: [u32; 5],
-  buf: Vec<u8>,
-  data_len: u64
+  buf: [u8; SHA1_BLOCK_SIZE],
+  buf_len: usize,
+  data_len: u64,
 }
 
 impl Sha1 {
   pub fn new() -> Self {
     Self {
       h: [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0],
-      buf: Vec::new(),
-      data_len: 0
+      buf: [0u8; SHA1_BLOCK_SIZE],
+      buf_len: 0,
+      data_len: 0,
     }
   }
 
   pub fn update<S: AsRef<[u8]>>(&mut self, data: &S) {
-    self.buf.extend_from_slice(data.as_ref());
-    self.data_len += data.as_ref().len() as u64;
-    while self.buf.len() >= SHA1_BLOCK_SIZE {
-      let block: Sha1Block = self.buf[..SHA1_BLOCK_SIZE].try_into().unwrap();
-      self.buf.drain(..SHA1_BLOCK_SIZE);
-      self.process_block(&block);
+    let mut input = data.as_ref();
+    self.data_len += input.len() as u64;
+    
+    while !input.is_empty() {
+      let space = SHA1_BLOCK_SIZE - self.buf_len;
+      let to_copy = input.len().min(space);
+      self.buf[self.buf_len..self.buf_len + to_copy].copy_from_slice(&input[..to_copy]);
+      self.buf_len += to_copy;
+      input = &input[to_copy..];
+
+      if self.buf_len == SHA1_BLOCK_SIZE {
+        self.process_block(&self.buf.clone());
+        self.buf_len = 0;
+      }
     }
   }
 
   pub fn finalize(&mut self) -> Sha1Digest {
-    let mut padded_buf = self.buf.clone();
-    let len = self.data_len * 8;
-    padded_buf.push(0x80);
-    while padded_buf.len() % SHA1_BLOCK_SIZE != 56 {
-      padded_buf.push(0);
-    }
-    padded_buf.extend_from_slice(&len.to_be_bytes());
+    let mut final_block = [0u8; 128]; // max of 2 blocks needed
+    final_block[..self.buf_len].copy_from_slice(&self.buf[..self.buf_len]);
 
-    for block in padded_buf.chunks(SHA1_BLOCK_SIZE) {
-      self.process_block(block.try_into().unwrap());
+    final_block[self.buf_len] = 0x80;
+    let total_len = self.data_len * 8;
+    let mut pad_len = self.buf_len + 1;
+
+    while pad_len % SHA1_BLOCK_SIZE != 56 {
+        pad_len += 1;
+    }
+
+    final_block[pad_len..pad_len + 8].copy_from_slice(&total_len.to_be_bytes());
+    let total_blocks = (pad_len + 8) / SHA1_BLOCK_SIZE;
+
+    for i in 0..total_blocks {
+        let block: Sha1Block = final_block[i * 64..(i + 1) * 64].try_into().unwrap();
+        self.process_block(&block);
     }
 
     let mut result: Sha1Digest = [0u8; 20];
@@ -49,7 +66,8 @@ impl Sha1 {
 
   pub fn reset(&mut self) {
     self.h = [0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0];
-    self.buf = Vec::new();
+    self.buf = [0u8; SHA1_BLOCK_SIZE];
+    self.buf_len = 0;
     self.data_len = 0;
   }
 
@@ -117,11 +135,13 @@ impl Sha1 {
     (value << amount) | (value >> (32 - amount))
   }
 
-  pub fn new_with_fixed_state(h: [u32; 5], data_len: u64) -> Self { // allow this for Challenge 29
+  pub fn new_with_fixed_state(h: [u32; 5], data_len: u64) -> Self {
+    // allow this for Challenge 29
     Self {
       h,
-      buf: Vec::new(),
-      data_len
+      buf: [0u8; SHA1_BLOCK_SIZE],
+      buf_len: 0,
+      data_len,
     }
   }
 }

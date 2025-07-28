@@ -1,6 +1,8 @@
 use cryptopals::utils::rng::{constants::*, mt19937::MT19937TwisterRNG};
 use rand::{thread_rng, Rng};
 
+// If we do hash(temper(number)) instead of temper(number) for MT19937, the attack does not work anymore. 
+
 fn untemper(y: u32) -> u32 {
   let mut y0 = y;
   y0 ^= y0 >> L;
@@ -19,8 +21,8 @@ fn untemper(y: u32) -> u32 {
 fn main() {
   let seed: u32 = thread_rng().gen();
   let mut rng = MT19937TwisterRNG::initialize(seed);
-  //let number = rng.extract_number();
-  //assert_eq!(seed, untemper(number)); // it works
+  let number = rng.extract_number();
+  assert_eq!(seed, untemper(number)); // it works
 
   let mut nums = [0u32; N];
   for i in 0..N {

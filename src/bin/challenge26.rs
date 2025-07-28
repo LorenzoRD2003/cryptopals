@@ -1,42 +1,53 @@
-use cryptopals::utils::aes::{
+use cryptopals::utils::{aes::{
   aes::AES,
   aes_error::AESError,
   constants::sizes::AES_BLOCK_SIZE,
   utils::{pkcs_padding, AESMode},
-};
+}, conversion::hex_string::HexString};
 use rand::{thread_rng, Rng};
 
-struct AttackerAPI {
-  key: [u8; 16],
+struct Oracle {
+  key: [u8; AES_BLOCK_SIZE],
   nonce: u64,
 }
 
-impl AttackerAPI {
-  fn create(key: &[u8; 16], nonce: u64) -> Self {
+impl Default for Oracle {
+  fn default() -> Self {
+    let mut rng: rand::prelude::ThreadRng = thread_rng();
     Self {
-      key: key.clone(),
-      nonce,
+      key: rng.gen(),
+      nonce: rng.gen()
     }
   }
+}
 
-  fn modify_and_encrypt_string<S: AsRef<[u8]>>(&self, input: &S) -> Result<Vec<u8>, AESError> {
-    let without_special_chars: Vec<u8> = input
+impl Oracle {
+  pub fn sanitize_and_encrypt<S: AsRef<[u8]>>(&self, input: &S) -> Result<Vec<u8>, AESError> {
+    let sanitized_input = Self::sanitize_input(input);
+    let plaintext = Self::prepare_plaintext(&sanitized_input);
+    AES::encode(&plaintext, &self.key, AESMode::CTR(self.nonce))
+  }
+
+  fn sanitize_input<S: AsRef<[u8]>>(input: &S) -> Vec<u8> {
+    input
       .as_ref()
       .iter()
       .filter(|&&c| c != b';' && c != b'=')
       .copied()
-      .collect();
-    let plaintext_bytes = [
+      .collect()
+  }
+
+  fn prepare_plaintext<S: AsRef<[u8]>>(input: &S) -> Vec<u8> {
+    let plaintext = [
       b"comment1=cooking%20MCs;userdata=".to_vec(),
-      without_special_chars,
+      input.as_ref().to_vec(),
       b";comment2=%20like%20a%20pound%20of%20bacon".to_vec(),
     ]
     .concat();
-    let padded_plaintext = pkcs_padding(&plaintext_bytes, AES_BLOCK_SIZE as u8);
-    AES::encode(&padded_plaintext, &self.key, AESMode::CTR(self.nonce))
+    pkcs_padding(&plaintext, AES_BLOCK_SIZE as u8)
   }
 
-  fn decrypt_and_look_for_admin_true<S: AsRef<[u8]>>(
+  pub fn decrypt_and_look_for_admin_true<S: AsRef<[u8]>>(
     &self,
     ciphertext: &S,
   ) -> Result<bool, AESError> {
@@ -50,16 +61,17 @@ impl AttackerAPI {
 }
 
 fn main() -> Result<(), AESError> {
-  let random_key: [u8; 16] = thread_rng().gen();
-  let random_nonce: u64 = thread_rng().gen();
-  let api = AttackerAPI::create(&random_key, random_nonce);
-  // We have to inject a bit-flipping CCA like in Challenge 16
-  let block: &[u8; 16] = b"abcde9admin9true";
-  let mut ciphertext = api.modify_and_encrypt_string(block)?;
-  ciphertext[2*AES_BLOCK_SIZE + 5] ^= 0x02; // Now we have to modify the third block
-  ciphertext[2*AES_BLOCK_SIZE + 11] ^= 0x04;
-  let is_admin = api.decrypt_and_look_for_admin_true(&ciphertext)?;
-  assert!(is_admin);
+  let oracle = Oracle::default();
+
+  // We have to inject a bit-flipping Chosen-Ciphertext-Attack (CCA) like in Challenge 16
+  let malicious_input: &[u8; AES_BLOCK_SIZE] = b"abcde9admin9true";
+  let mut malicious_ciphertext = oracle.sanitize_and_encrypt(malicious_input)?;
+  let offset = "comment1=cooking%20MCs;userdata=".len();
+  malicious_ciphertext[offset + 5] ^= b'9' ^ b';'; // Now we have to modify the third block
+  malicious_ciphertext[offset + 11] ^= b'9' ^ b'=';
+  let is_admin = oracle.decrypt_and_look_for_admin_true(&malicious_ciphertext)?;
+  println!("Ciphertext: {}", HexString::from(malicious_ciphertext));
+  println!("Is admin: {}", is_admin);
 
   Ok(())
 }

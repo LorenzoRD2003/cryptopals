@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 
 use super::algebra::modulo::mod_exp;
 
- // The session is "local" for each party, their params are never sent so they are set to public to be able to access them
+// The session is "local" for each party, their params are never sent so they are set to public to be able to access them
 #[derive(Debug, Clone, PartialEq)]
 pub struct DiffieHellmanSession {
   pub encryption_key: [u8; 16],
@@ -40,7 +40,11 @@ impl DiffieHellmanParty {
     }
   }
 
-  pub fn from_other_party_params(p: &BigUint, g: &BigUint, other_pk: &BigUint) -> (DiffieHellmanParty, DiffieHellmanSession) {
+  pub fn from_other_party_params(
+    p: &BigUint,
+    g: &BigUint,
+    other_pk: &BigUint,
+  ) -> (DiffieHellmanParty, DiffieHellmanSession) {
     let party = Self::new(&p, &g);
     let session = party.create_session_with(&other_pk);
     (party, session)
@@ -49,10 +53,8 @@ impl DiffieHellmanParty {
 
 #[cfg(test)]
 mod tests {
-
   use crate::utils::algebra::primes::get_nist_prime;
-
-use super::*;
+  use super::*;
 
   #[test]
   fn test_mod_exp() {

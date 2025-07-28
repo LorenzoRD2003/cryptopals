@@ -11,8 +11,9 @@ fn md_padding(key_len: usize, v: &mut Vec<u8>) {
 }
 
 fn main() {
-  let random_length: u8 = thread_rng().gen_range(16..=32);
-  let random_key: Vec<u8> = (0..random_length).map(|_| thread_rng().gen()).collect();
+  let mut rng = thread_rng();
+  let random_length: u8 = rng.gen_range(16..=32);
+  let random_key: Vec<u8> = (0..random_length).map(|_| rng.gen()).collect();
 
   // We will try all different possible key_sizes
   for key_len in 16..32 {

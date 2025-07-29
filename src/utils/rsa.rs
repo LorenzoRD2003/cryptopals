@@ -1,7 +1,10 @@
+use super::{
+  algebra::modulo::{inv_mod, mod_exp},
+  padding::{pkcs1_pad, pkcs1_unpad},
+};
 use num_bigint::BigUint;
+use num_primes::Generator;
 use num_traits::One;
-
-use super::{algebra::{modulo::{inv_mod, mod_exp}, primes::generate_prime}, padding::{pkcs1_pad, pkcs1_unpad}};
 
 #[derive(Clone)]
 pub struct RSAKeys {
@@ -13,12 +16,17 @@ pub struct RSA {}
 
 impl RSA {
   const E: u64 = 65537;
-  const BITS: u64 = 512;
-  const ITERATIONS: u64 = 7;
+  const BITS: usize = 512;
   pub fn generate_keys() -> RSAKeys {
     loop {
-      let p: BigUint = generate_prime(Self::BITS, Self::ITERATIONS);
-      let q: BigUint = generate_prime(Self::BITS, Self::ITERATIONS);
+      let p: BigUint = {
+        let num_primes_p = Generator::new_prime(Self::BITS);
+        BigUint::from_bytes_be(&num_primes_p.to_bytes_be())
+      };
+      let q: BigUint = {
+        let num_primes_q = Generator::new_prime(Self::BITS);
+        BigUint::from_bytes_be(&num_primes_q.to_bytes_be())
+      };
       let n = &p * &q;
       let et = (&p - BigUint::one()) * (&q - BigUint::one());
       let option_d = inv_mod(&BigUint::from(Self::E), &et);
@@ -71,18 +79,24 @@ impl RSA {
   }
 
   // Pre: p, q are primes
-  pub fn generate_keys_with_given_size(bits: u64) -> RSAKeys {
+  pub fn generate_keys_with_given_params(e: &BigUint, bits: usize) -> RSAKeys {
     loop {
-      let p: BigUint = generate_prime(bits, Self::ITERATIONS);
-      let q: BigUint = generate_prime(bits, Self::ITERATIONS);
+      let p: BigUint = {
+        let num_primes_p = Generator::new_prime(bits);
+        BigUint::from_bytes_be(&num_primes_p.to_bytes_be())
+      };
+      let q: BigUint = {
+        let num_primes_q = Generator::new_prime(bits);
+        BigUint::from_bytes_be(&num_primes_q.to_bytes_be())
+      };
       let n = &p * &q;
       let et = (&p - BigUint::one()) * (&q - BigUint::one());
-      let option_d = inv_mod(&BigUint::from(Self::E), &et);
+      let option_d = inv_mod(&e, &et);
       match option_d {
         Some(d) => {
           return RSAKeys {
             sk: (d, n.clone()),
-            pk: (BigUint::from(Self::E), n),
+            pk: (e.clone(), n),
           };
         }
         None => continue,

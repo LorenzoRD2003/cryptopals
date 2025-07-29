@@ -47,8 +47,8 @@ impl SignatureAlgorithm for DSA {
       16,
     )
     .unwrap();
-    assert_eq!((&p - BigUint::one()) % &q, BigUint::zero()); // q | p - 1
-    assert_eq!(mod_exp(&g, &q, &p), BigUint::one());
+    assert_eq!((&p - BigUint::one()) % &q, BigUint::zero()); // q | p - 1 (because mod q will be taken on exponent of mod p)
+    assert_eq!(mod_exp(&g, &q, &p), BigUint::one()); // g^q % p = 1
     Self { p, q, g }
   }
 
@@ -58,8 +58,9 @@ impl SignatureAlgorithm for DSA {
 
   // Returns (x, y) = (secret_key, public_key)
   fn generate_keys(&self) -> (Self::FieldElement, Self::FieldElement) {
+    // 2 <= x < q (nontrivial x mod q)
     let x = thread_rng().gen_biguint_range(&BigUint::from(2u8), &(&self.q - BigUint::one()));
-    let y = mod_exp(&self.g, &x, &self.p);
+    let y = mod_exp(&self.g, &x, &self.p); // y = g^x % p
     (x, y)
   }
 
@@ -69,15 +70,16 @@ impl SignatureAlgorithm for DSA {
     message: &S,
   ) -> (Self::FieldElement, Self::FieldElement) {
     let (mut r, mut s) = (BigUint::zero(), BigUint::zero());
-    let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q;
+    let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q; // h = H(m) % q
     while r.is_zero() || s.is_zero() {
-      let k = thread_rng().gen_biguint_range(&BigUint::from(2u8), &self.q);
-      r = mod_exp(&self.g, &k, &self.p) % &self.q;
+      // 2 <= k < q (nontrivial k mod q)
+      let k = thread_rng().gen_biguint_range(&BigUint::from(2u8), &(&self.q - BigUint::one()));
+      r = mod_exp(&self.g, &k, &self.p) % &self.q; // r = (g^k % p) % q
       if r.is_zero() {
         continue;
       }
       let inv_k = inv_mod(&k, &self.q).unwrap();
-      s = (inv_k * (&h + x * &r)) % &self.q;
+      s = (inv_k * (&h + x * &r)) % &self.q; // s = (h + xr)/k  % q -> ks = h + xr = H(m) + xr % q
     }
     (r, s)
   }
@@ -89,15 +91,15 @@ impl SignatureAlgorithm for DSA {
     signature: &(Self::FieldElement, Self::FieldElement),
   ) -> bool {
     let (r, s) = signature;
-    if s.is_zero() || r >= &self.q || s >= &self.q {
+    if s.is_zero() || r.is_zero() || r >= &self.q || s >= &self.q {
       return false;
     }
-    let w = inv_mod(s, &self.q).unwrap(); // w = s^-1 (mod q)
+    let w = inv_mod(s, &self.q).unwrap(); // w = s^-1 % q
     let h = BigUint::from_bytes_be(&Sha1::hash(message)) % &self.q;
-    let u1 = (&h * &w) % &self.q; // u1 = H(m) * w (mod q)
+    let u1 = (&h * &w) % &self.q; // u1 = H(m) * w % q
     let u2 = (r * &w) % &self.q; // u2 = r * w (mod q)
     let v = {
-      // v = g^u1 y^u2 (mod p) (mod q)
+      // v = (g^u1 y^u2 % p) % q
       let a = mod_exp(&self.g, &u1, &self.p);
       let b = mod_exp(y, &u2, &self.p);
       ((a * b) % &self.p) % &self.q
@@ -107,13 +109,14 @@ impl SignatureAlgorithm for DSA {
 }
 
 /*
-  Correctness: Suppose r = (g^k mod p) mod q, s = k^-1 (H(m) + xr) (mod q) are correct. Then:
-    v = (g^u1 y^u2 mod p) mod q
-      = (g^u1 g^(x u2) mod p) mod q
-      = (g^(u1 + x u2) mod p) mod q
-      = (g^(H(m) * w + xrw) mod p) mod q (and exponent mod p - 1, and remember g is of order q | p - 1)
-      = (g^wks mod p) mod q
-      = (g^k mod p) mod q (since w = s^-1 mod q)
+  Correctness: Suppose r = (g^k % p) % q, s = k^-1 (H(m) + xr) (mod q) are correct. Then:
+    v = (g^u1 y^u2 % p) % q
+      = (g^u1 g^(x u2) % p) % q
+      = (g^(u1 + x u2) % p) % q
+      = (g^(H(m) * w + xrw) % p) % q (and exponent % p - 1, since g is of order q | p - 1)
+      = ((g^w)^(H(m) + xr) % p) % q
+      = (g^wks % p) % q (since ks = H(m) + xr)
+      = (g^k % p) % q (since w = s^-1 % q and g is of order q | p - 1)
       = r
 */
 

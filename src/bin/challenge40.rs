@@ -6,9 +6,9 @@ use num_bigint::BigUint;
 
 fn main() {
   let plaintext = String::from("BOCA");
-  let keys_1 = RSA::generate_keys_with_given_size(64);
-  let keys_2 = RSA::generate_keys_with_given_size(64);
-  let keys_3 = RSA::generate_keys_with_given_size(64);
+  let keys_1 = RSA::generate_keys_with_given_params(&BigUint::from(3u8), 64);
+  let keys_2 = RSA::generate_keys_with_given_params(&BigUint::from(3u8), 64);
+  let keys_3 = RSA::generate_keys_with_given_params(&BigUint::from(3u8), 64);
 
   let result = {
     let (c1, c2, c3) = (

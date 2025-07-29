@@ -27,10 +27,10 @@ fn main() {
       = r
   */
   let (p, q, _) = dsa.get_params();
-  dsa.g = &p + BigUint::one();
-  let z = BigUint::from(234567u32);
-  let r = mod_exp(&y, &z, &p) % &q;
-  let s = (&r * inv_mod(&z, &q).unwrap()) % q;
+  dsa.g = &p + BigUint::one(); // g = p + 1
+  let z = BigUint::from(234567u32); // choose z
+  let r = mod_exp(&y, &z, &p) % &q; // r = y^z % p % q
+  let s = (&r * inv_mod(&z, &q).unwrap()) % q; // s = r/z % q
   let forged_signature_2 = (r, s);
   assert!(dsa.verify(&y, message, &forged_signature_2));
 }

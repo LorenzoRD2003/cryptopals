@@ -1,5 +1,8 @@
 use cryptopals::utils::{
-  algebra::modulo::{inv_mod, mod_exp}, conversion::hex_string::HexString, dsa::{SignatureAlgorithm, DSA}, mac::sha1::Sha1,
+  algebra::modulo::{inv_mod, mod_exp},
+  conversion::hex_string::HexString,
+  dsa::{SignatureAlgorithm, DSA},
+  mac::sha1::Sha1,
 };
 use num_bigint::BigUint;
 
@@ -19,11 +22,10 @@ fn main() {
   let r = BigUint::parse_bytes(b"548099063082341131477253921760299949438196259240", 10).unwrap();
   let s = BigUint::parse_bytes(b"857042759984254168557880549501802188789837994940", 10).unwrap();
 
-
-  // We know that k is between 0 and 65535. So we try all those values
+  // We know that k is between 0 and 2^16 - 1. So we try all those values
   let inv_r = inv_mod(&r, &q).unwrap();
   for k in 0u16..=65535 {
-    let x = {
+    let x = { // x = (sk - H(m))/r % q
       let mut acc = (&s * &k) % &q;
       acc = (&q + acc - &h) % &q;
       acc = (acc * &inv_r) % &q;
@@ -32,6 +34,12 @@ fn main() {
     println!("{} {}", k, x);
     if mod_exp(&g, &x, &p) == y {
       // solution: k = 16575, x = 125489817134406768603130881762531825565433175625
+      let fingerprint = Sha1::hash(&x.to_bytes_be());
+      println!(
+        "Found key: {}, SHA1: {}",
+        &x,
+        HexString::from(fingerprint.to_vec())
+      );
       break;
     }
   }

@@ -6,19 +6,21 @@ use cryptopals::utils::{
 };
 use num_bigint::{BigUint, RandBigInt};
 use rand::{rngs::ThreadRng, thread_rng, Rng};
+use std::collections::HashSet;
 
 struct Server {
   rng: ThreadRng,
   pub keys: RSAKeys,
-  hashed_messages: Vec<Sha1Digest>,
+  hashed_messages: HashSet<Sha1Digest>,
 }
 
 impl Server {
+  const E: u64 = 65537;
   pub fn start() -> Self {
     Self {
       rng: thread_rng(),
-      keys: RSA::generate_keys_with_given_size(128),
-      hashed_messages: vec![],
+      keys: RSA::generate_keys_with_given_params(&BigUint::from(Self::E), 128),
+      hashed_messages: HashSet::new(),
     }
   }
 
@@ -37,13 +39,38 @@ impl Server {
     if self.hashed_messages.contains(&hash) {
       return Err("Message already decrypted.".to_string());
     }
-    self.hashed_messages.push(hash);
+    self.hashed_messages.insert(hash);
     Ok(RSA::decrypt_with_key(&self.keys.sk, ciphertext))
   }
 
   pub fn retrieve_pk(&self) -> (BigUint, BigUint) {
     self.keys.pk.clone()
   }
+}
+
+/// This function applies a transformation for each chunk of a byte array when thought as a BigUint
+fn process_as_chunks<S: AsRef<[u8]>, F: Fn(&BigUint) -> BigUint>(
+  input: &S,
+  chunk_size: usize,
+  transform: F,
+  unpad: bool,
+) -> Vec<u8> {
+  let mut output = vec![];
+  for chunk in input.as_ref().chunks(chunk_size) {
+    let n = BigUint::from_bytes_be(chunk);
+    let transformed = transform(&n).to_bytes_be();
+
+    let mut extended = vec![0u8; chunk_size]; // Pad with zeros to match chunk size
+    extended[chunk_size - transformed.len()..].copy_from_slice(&transformed);
+
+    if unpad { // we should use unpad = true for decryption of rsa
+      let unpadded = pkcs1_unpad(&extended); // safe unpadding
+      output.extend(unpadded);
+    } else {
+      output.extend(extended);
+    }
+  }
+  output
 }
 
 fn main() {
@@ -64,28 +91,15 @@ fn main() {
     P' = (S^E * C)^D = S^(ED) * C^D = S * P (mod N)
     → P = P' * S^-1 (mod N)
   */
+  // Generate random blinding factor `s` such that 1 < s < n
   let s = thread_rng().gen_biguint_range(&BigUint::from(2u8), &n);
   let m = mod_exp(&s, &e, &n);
   let inv_s = inv_mod(&s, &n).unwrap();
-  let chunk_size = ((n.bits() + 7) / 8) as usize;
+  let chunk_size = ((n.bits() + 7) / 8) as usize; // we require n.bits() >= 1024
 
   // First of all, we have to do this in chunks of size n
-  let mut dif_ciphertext: Vec<u8> = vec![];
-  for ciphertext_chunk in ciphertext.chunks(chunk_size) {
-    let c = BigUint::from_bytes_be(ciphertext_chunk);
-    let cx = (&m * &c) % &n;
-    dif_ciphertext.extend(cx.to_bytes_be());
-  }
+  let dif_ciphertext = process_as_chunks(&ciphertext, chunk_size, |c| (&m * c) % &n, false);
   let dif_plaintext = server.decrypt_ciphertext(&dif_ciphertext).unwrap();
-  let mut plaintext: Vec<u8> = vec![];
-  for px_chunk in dif_plaintext.chunks(chunk_size) {
-    let px = BigUint::from_bytes_be(px_chunk);
-    let p = (&px * &inv_s) % &n;
-    let p_bytes = p.to_bytes_be();
-    let zeros = chunk_size - p_bytes.len();
-    let extended_p = [vec![0; zeros], p_bytes].concat();
-    let unpadded_p = pkcs1_unpad(&extended_p);
-    plaintext.extend(unpadded_p);
-  }
+  let plaintext = process_as_chunks(&dif_plaintext, chunk_size, |px| (px * &inv_s) % &n, true);
   println!("{}", String::from_utf8_lossy(&plaintext));
 }

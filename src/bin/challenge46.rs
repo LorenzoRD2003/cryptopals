@@ -1,6 +1,7 @@
 use cryptopals::utils::{
   algebra::modulo::mod_exp,
   conversion::conversion::base64_to_bytes_vector,
+  padding::pkcs1_unpad,
   rsa::{RSAKeys, RSA},
 };
 use num_bigint::BigUint;
@@ -9,8 +10,8 @@ use num_traits::{One, Zero};
 /*
   Let c be a RSA ciphertext (d, e, n). c = m^e (mod n) we do not know d.
   Given c, the oracle returns true iff m = c^d (mod n) is odd.
-  We can double the ciphertext → c1 = 2^e c (mod n)
-  c1^d = 2^(ed) c^d = 2m (mod n)
+  We can "double" the ciphertext → c1 = 2^e c (mod n)
+  c1^d = 2^(ed) c^d = 2m (mod n) (and that doubled the message)
 
   Observe as 0 <= m < n then 0 <= 2m < 2n and since 2m is even and n = pq is odd,
   there are two cases:
@@ -32,9 +33,11 @@ struct RSAParityOracle {
 }
 
 impl RSAParityOracle {
-  fn start(bits: u64) -> Self {
+  const E: u64 = 65537;
+
+  fn start(bits: usize) -> Self {
     Self {
-      keys: RSA::generate_keys_with_given_size(bits),
+      keys: RSA::generate_keys_with_given_params(&BigUint::from(Self::E), bits),
     }
   }
 
@@ -49,17 +52,19 @@ impl RSAParityOracle {
   fn is_plaintext_odd<S: AsRef<[u8]>>(&self, ciphertext: &S) -> bool {
     let plaintext = RSA::decrypt_with_key(&self.keys.sk, ciphertext);
     let num = BigUint::from_bytes_be(plaintext.as_ref());
+    //num & BigUint::one() == BigUint::one()
     num % BigUint::from(2u8) == BigUint::one()
   }
 }
 
 fn main() {
-  let base64_str = "VGhhdCdzIHdoeSBJIGZvdW5kIHlvdSBkb24ndCBwbGF5IGFyb3VuZCB3aXRoIHRoZSBGdW5reSBDb2xkIE1lZGluYQ==";
+  let base64_str =
+    "VGhhdCdzIHdoeSBJIGZvdW5kIHlvdSBkb24ndCBwbGF5IGFyb3VuZCB3aXRoIHRoZSBGdW5reSBDb2xkIE1lZGluYQAAA==";
   let plaintext = base64_to_bytes_vector(base64_str).unwrap_or(vec![]);
   dbg!(plaintext.len());
 
   //let plaintext = b"AGUANTE BOCA";
-  let oracle = RSAParityOracle::start(1024);
+  let oracle = RSAParityOracle::start(512);
   let ciphertext = oracle.encrypt(&plaintext);
   let (e, n) = oracle.get_pk();
   let two = BigUint::from(2u8);
@@ -82,7 +87,16 @@ fn main() {
     } else {
       upper_bound -= &k;
     }
-    println!("{} {}", i, String::from_utf8_lossy(upper_bound.to_bytes_be().as_ref()));
+    println!(
+      "{} {}",
+      i,
+      String::from_utf8_lossy(upper_bound.to_bytes_be().as_ref())
+    );
   }
-  // another thing that is possible is to remove padding
+  let solution = [vec![0x00], upper_bound.to_bytes_be()].concat();
+  let unpadded_solution = pkcs1_unpad(&solution);
+  println!(
+    "Final solution: {}",
+    String::from_utf8_lossy(&unpadded_solution)
+  );
 }

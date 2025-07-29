@@ -1,8 +1,7 @@
 use std::collections::HashSet;
 
 use cryptopals::utils::{
-  algebra::modulo::{inv_mod, mod_exp},
-  rsa::{RSAKeys, RSA},
+  algebra::modulo::{inv_mod, mod_exp}, padding::pkcs1_unpad, rsa::{RSAKeys, RSA}
 };
 use num::Integer;
 use num_bigint::{BigUint, RandBigInt};
@@ -16,10 +15,12 @@ struct RSAPaddingOracle {
 }
 
 impl RSAPaddingOracle {
-  fn start(bits: u64) -> Self {
+  const E: u64 = 65537;
+
+  fn start(bits: usize) -> Self {
     Self {
-      keys: RSA::generate_keys_with_given_size(bits),
-      calls: 0,
+      keys: RSA::generate_keys_with_given_params(&BigUint::from(Self::E), bits),
+      calls: 0
     }
   }
 
@@ -224,14 +225,16 @@ impl<'a> BleichenbacherAttack<'a> {
 }
 
 fn main() {
-  let secret_message = b"AGUANTE BOCA".to_vec();
-  // let mut oracle = RSAPaddingOracle::start(128); // CHALLENGE 47
-  let mut oracle = RSAPaddingOracle::start(768); // CHALLENGE 48
+  let secret_message = b"Aguante Boca";
+  //let mut oracle = RSAPaddingOracle::start(128); // CHALLENGE 47
+  let mut oracle = RSAPaddingOracle::start(512); // CHALLENGE 48
   let ciphertext = oracle.encrypt(&secret_message);
 
   dbg!(1);
   let mut algorithm = BleichenbacherAttack::start_step1(&mut oracle, &ciphertext);
   let m = algorithm.get_solution();
+  let solution = [vec![0x00], m.to_bytes_be()].concat();
+  let unpadded_solution = pkcs1_unpad(&solution);
   dbg!(&m);
-  println!("{}", String::from_utf8_lossy(m.to_bytes_be().as_ref()));
+  println!("{}", String::from_utf8_lossy(&unpadded_solution));
 }

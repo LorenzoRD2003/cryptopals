@@ -173,8 +173,8 @@ fn main() {
   let (attacker_byte, victim_byte) = (msg1_bytes[6], msg1_bytes[11]);
   let b = attacker_byte ^ victim_byte;
   let mut forged_iv1 = iv1.clone();
-  forged_iv1[6] = b;
-  forged_iv1[11] = b;
+  forged_iv1[6] = b; // FROM_ID_OFFSET = 6
+  forged_iv1[11] = b; // TO_ID_OFFSET = 11
   msg1_bytes.swap(6, 11);
   let forged_msg1 = String::from_utf8(msg1_bytes.to_vec()).unwrap();
   assert!(server1.verify_signature(&forged_msg1, forged_iv1, &mac1));
@@ -225,4 +225,6 @@ fn main() {
   // Determine if we completed the challenge
   assert!(server2.verify_signature(&forged_message, iv2, &attacker_mac));
   println!("Part 2 works correctly.");
+  // The main conclusion is the following: The protocol is NOT secure for variable-length messages.
+  // It could be secure for fixed-length messages: i.e. of the form M = len(M) || P
 }

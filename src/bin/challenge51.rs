@@ -11,7 +11,6 @@ use std::{collections::HashMap, io::Write};
   The objective is to steal secure session cookies.
   The idea is to leak information using the compression library. We want to obtain the session id
   A payload of "sessionid=T" should compress a little bit better than "sessionid=S".
-
 */
 
 #[derive(Debug)]
@@ -45,13 +44,15 @@ struct CompressionOracle {
   secret: String,
 }
 
-impl CompressionOracle {
-  fn new() -> Self {
-    Self {
+impl Default for CompressionOracle {
+  fn default() -> Self {
+      Self {
       secret: String::from("TmV2ZXIgcmV2ZWFsIHRoZSBXdS1UYW5nIFNlY3JldCE="),
     }
   }
+}
 
+impl CompressionOracle {
   fn format_request<S: AsRef<[u8]>>(&self, plaintext: &S) -> String {
     format!(
       "POST / HTTP/1.1
@@ -116,7 +117,7 @@ fn get_possible_strings(
 }
 
 fn main() -> Result<(), CompressionOracleError> {
-  let oracle = CompressionOracle::new();
+  let oracle = CompressionOracle::default();
   let mut possible_strings: Vec<String> = vec!["".to_string()];
   for i in 1..=44 {
     possible_strings =
